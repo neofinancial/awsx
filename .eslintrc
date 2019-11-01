@@ -1,0 +1,6 @@
+{
+  "extends": "eslint-config-neo/config-backend",
+  "rules": {
+    "no-console": "off"
+  }
+}

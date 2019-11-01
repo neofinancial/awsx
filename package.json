@@ -1,0 +1,50 @@
+{
+  "name": "awsx",
+  "description": "AWS CLI profile switcher with MFA support",
+  "version": "1.0.0",
+  "author": "Neo Financial Engineering <engineering@neofinancial.com>",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neofinancial/awsx"
+  },
+  "engines": {
+    "node": "^10.0.0"
+  },
+  "scripts": {
+    "start": "ts-node src/app.ts",
+    "build": "tsc",
+    "clean": "rimraf build",
+    "lint": "eslint \"**/*.{ts,js}\"",
+    "format": "prettier --write \"**/*.{ts,js,json,yaml,yml,md}\"",
+    "format:check": "prettier --debug-check \"**/*.{ts,js,json,yaml,yml,md}\""
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "eslint --max-warnings 100",
+      "git add"
+    ],
+    "*.{ts,js,json,yaml,yml,md}": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "dependencies": {
+    "aws-sdk": "^2.562.0",
+    "chalk": "^2.4.2",
+    "inquirer": "^7.0.0",
+    "yargs": "^14.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.12",
+    "@types/yargs": "^13.0.3",
+    "eslint": "^6.5.1",
+    "eslint-config-neo": "^0.3.3",
+    "husky": "^3.0.8",
+    "lint-staged": "^9.4.2",
+    "prettier": "^1.18.2",
+    "rimraf": "^3.0.0",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.4"
+  }
+}
