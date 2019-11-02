@@ -2,60 +2,51 @@ import * as fs from 'fs';
 
 import { AWSCredentials } from './types';
 
-export class ProfileWriter {
-  private awsCredentialsFilePath: string;
-  private temporaryCredentials: AWSCredentials;
-  private profileRegex: RegExp;
+const awsCredentialsFilePath = '/path/to/aws/credentials';
 
-  public constructor(
-    awsCredentialsFilePath: string,
-    profile: string,
-    temporaryCredentials: AWSCredentials
-  ) {
-    this.awsCredentialsFilePath = awsCredentialsFilePath;
-    this.temporaryCredentials = temporaryCredentials;
-    this.profileRegex = new RegExp('^.*' + profile + '((.|\\s)*?(?=\\[)|(.|\\s)*)', 'gm');
-  }
+const createProfileRegex = (profile: string): RegExp => {
+  return new RegExp('^.*' + profile + '((.|\\s)*?(?=\\[)|(.|\\s)*)', 'gm');
+};
 
-  public overwriteProfile(): void {
-    const self = this;
+function replaceExistingProfile(
+  credentialsFileContents: string,
+  temporaryCredentials: AWSCredentials
+): void {
+  fs.writeFileSync(
+    awsCredentialsFilePath,
+    credentialsFileContents.replace(
+      createProfileRegex(temporaryCredentials.profileName),
+      `${temporaryCredentials.toAwsFormat()}\r\n`
+    )
+  );
+}
 
-    fs.readFile(self.awsCredentialsFilePath, 'utf-8', (err, data): void => {
+function appendNewProfile(temporaryCredentials: AWSCredentials): void {
+  fs.appendFile(
+    awsCredentialsFilePath,
+    `\r\n${temporaryCredentials.toAwsFormat()}\r\n`,
+    'utf-8',
+    (err): void => {
       if (err) {
-        console.log('No existing AWS credentials file found, writing file...');
-        fs.writeFileSync(self.awsCredentialsFilePath, self.temporaryCredentials.toAwsFormat());
-
-        return;
+        throw new Error('Failed to append profile to AWS credentials file...');
       }
+    }
+  );
+}
 
-      if (data.match(self.profileRegex)) {
-        self.replaceExistingProfile(data);
-      } else {
-        self.appendNewProfile();
-      }
-    });
-  }
+export default function overwriteProfile(temporaryCredentials: AWSCredentials): void {
+  fs.readFile(awsCredentialsFilePath, 'utf-8', (err, data): void => {
+    if (err) {
+      console.log('No existing AWS credentials file found, writing file...');
+      fs.writeFileSync(awsCredentialsFilePath, temporaryCredentials.toAwsFormat());
 
-  private replaceExistingProfile(credentialsFileContents: string): void {
-    fs.writeFileSync(
-      this.awsCredentialsFilePath,
-      credentialsFileContents.replace(
-        this.profileRegex,
-        `${this.temporaryCredentials.toAwsFormat()}\r\n`
-      )
-    );
-  }
+      return;
+    }
 
-  private appendNewProfile(): void {
-    fs.appendFile(
-      this.awsCredentialsFilePath,
-      `\r\n${this.temporaryCredentials.toAwsFormat()}\r\n`,
-      'utf-8',
-      (err): void => {
-        if (err) {
-          throw new Error('Failed to append profile to AWS credentials file...');
-        }
-      }
-    );
-  }
+    if (data.match(createProfileRegex(temporaryCredentials.profileName))) {
+      replaceExistingProfile(data, temporaryCredentials);
+    } else {
+      appendNewProfile(temporaryCredentials);
+    }
+  });
 }

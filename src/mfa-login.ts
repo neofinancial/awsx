@@ -1,61 +1,65 @@
-import AWS, { STS } from 'aws-sdk';
+import AWS, { STS, AWSError } from 'aws-sdk';
 import { GetSessionTokenRequest } from 'aws-sdk/clients/sts';
 
 import { ProfileConfiguration, AWSCredentials } from './types';
 
-export class MFALogin {
-  private stsClient: STS;
-  private mfaDeviceArn: string;
-  private mfaToken: string;
-  private profileName: string;
+function createStsClient(configuration: ProfileConfiguration): AWS.STS {
+  AWS.config.credentials = new AWS.Credentials(
+    configuration.awsAccessKeyId,
+    configuration.awsSecretAccessKey
+  );
 
-  public constructor(configuration: ProfileConfiguration, mfaToken: string) {
-    if (!configuration.mfaEnabled) {
-      throw new Error(`MFA is disabled for profile ${configuration.profileName}`);
+  return new AWS.STS();
+}
+
+function createStsParameters(
+  configuration: ProfileConfiguration,
+  mfaToken: string
+): GetSessionTokenRequest {
+  return {
+    DurationSeconds: configuration.sessionLengthInSeconds,
+    SerialNumber: configuration.mfaDeviceArn,
+    TokenCode: mfaToken
+  };
+}
+
+function createTemporaryCredentials(
+  profileName: string,
+  credentials: STS.Credentials
+): AWSCredentials {
+  return {
+    profileName: profileName,
+    awsAccessKeyId: credentials.AccessKeyId,
+    awsSecretAccessKey: credentials.SecretAccessKey,
+    awsSessionToken: credentials.SessionToken,
+    toAwsFormat: (): string => {
+      return `[${profileName}]\r\naws_access_key_id = ${credentials.AccessKeyId}\r\naws_secret_access_key = ${credentials.SecretAccessKey}\r\naws_session_token = ${credentials.SessionToken}`;
     }
+  };
+}
 
-    AWS.config.credentials = new AWS.Credentials(
-      configuration.awsAccessKeyId,
-      configuration.awsSecretAccessKey
-    );
+export default function getTemporaryCredentials(
+  configuration: ProfileConfiguration,
+  mfaToken: string
+): AWSCredentials {
+  let temporaryCredentials = {};
 
-    this.stsClient = new AWS.STS();
-    this.mfaDeviceArn = configuration.mfaDeviceArn;
-    this.mfaToken = mfaToken;
-    this.profileName = configuration.profileName;
-  }
-
-  public getTemporaryCredentials(): AWSCredentials {
-    const self = this;
-    let temporaryCredentials = {};
-
-    this.stsClient.getSessionToken(this.createStsParameters(), (err, data): void => {
+  const stsParameters = createStsParameters(configuration, mfaToken);
+  createStsClient(configuration).getSessionToken(
+    stsParameters,
+    (err: AWSError, data: STS.Types.GetSessionTokenResponse): void => {
       if (err) {
         throw err;
       }
 
       if (data && data.Credentials) {
-        const credentials = data.Credentials;
-
-        temporaryCredentials = {
-          awsAccessKeyId: credentials.AccessKeyId,
-          awsSecretAccessKey: credentials.SecretAccessKey,
-          awsSessionToken: credentials.SessionToken,
-          toAwsFormat: (): string => {
-            return `[${self.profileName}]\r\naws_access_key_id = ${credentials.AccessKeyId}\r\naws_secret_access_key = ${credentials.SecretAccessKey}\r\naws_session_token = ${credentials.SessionToken}`;
-          }
-        };
+        temporaryCredentials = createTemporaryCredentials(
+          configuration.profileName,
+          data.Credentials
+        );
       }
-    });
+    }
+  );
 
-    return temporaryCredentials as AWSCredentials;
-  }
-
-  private createStsParameters(): GetSessionTokenRequest {
-    return {
-      DurationSeconds: 3600, //TODO: get this from config
-      SerialNumber: this.mfaDeviceArn,
-      TokenCode: this.mfaToken
-    };
-  }
+  return temporaryCredentials as AWSCredentials;
 }
