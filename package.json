@@ -25,6 +25,7 @@
     "format:check": "prettier --debug-check \"**/*.{ts,js,json,yaml,yml,md}\""
   },
   "files": [
+    "bin",
     "dist"
   ],
   "lint-staged": {
