@@ -1,32 +1,30 @@
 import AWS, { STS, AWSError } from 'aws-sdk';
 import { GetSessionTokenRequest } from 'aws-sdk/clients/sts';
 
-import { ProfileConfiguration, AWSCredentials } from './types';
-
-function createStsClient(configuration: ProfileConfiguration): AWS.STS {
+const createStsClient = (configuration: ProfileConfiguration): AWS.STS => {
   AWS.config.credentials = new AWS.Credentials(
     configuration.awsAccessKeyId,
     configuration.awsSecretAccessKey
   );
 
   return new AWS.STS();
-}
+};
 
-function createStsParameters(
+const createStsParameters = (
   configuration: ProfileConfiguration,
   mfaToken: string
-): GetSessionTokenRequest {
+): GetSessionTokenRequest => {
   return {
     DurationSeconds: configuration.sessionLengthInSeconds,
     SerialNumber: configuration.mfaDeviceArn,
     TokenCode: mfaToken
   };
-}
+};
 
-function createTemporaryCredentials(
+const createTemporaryCredentials = (
   profileName: string,
   credentials: STS.Credentials
-): AWSCredentials {
+): AWSCredentials => {
   return {
     profileName: profileName,
     awsAccessKeyId: credentials.AccessKeyId,
@@ -36,12 +34,12 @@ function createTemporaryCredentials(
       return `[${profileName}]\r\naws_access_key_id = ${credentials.AccessKeyId}\r\naws_secret_access_key = ${credentials.SecretAccessKey}\r\naws_session_token = ${credentials.SessionToken}`;
     }
   };
-}
+};
 
-export default function getTemporaryCredentials(
+const getTemporaryCredentials = (
   configuration: ProfileConfiguration,
   mfaToken: string
-): AWSCredentials {
+): AWSCredentials => {
   let temporaryCredentials = {};
 
   const stsParameters = createStsParameters(configuration, mfaToken);
@@ -62,4 +60,24 @@ export default function getTemporaryCredentials(
   );
 
   return temporaryCredentials as AWSCredentials;
+};
+
+export default getTemporaryCredentials;
+
+export interface ProfileConfiguration {
+  profileName: string;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  mfaEnabled: boolean;
+  mfaDeviceArn: string;
+  lastLoginTimeInSeconds: number;
+  sessionLengthInSeconds: number;
+}
+
+export interface AWSCredentials {
+  profileName: string;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  awsSessionToken: string;
+  toAwsFormat(): string;
 }

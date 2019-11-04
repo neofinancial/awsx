@@ -1,6 +1,6 @@
-import * as fs from 'fs';
+import fs from 'fs';
 
-import { AWSCredentials } from './types';
+import { AWSCredentials } from './mfa-login';
 
 const awsCredentialsFilePath = '/path/to/aws/credentials';
 
@@ -8,10 +8,10 @@ const createProfileRegex = (profile: string): RegExp => {
   return new RegExp('^.*' + profile + '((.|\\s)*?(?=\\[)|(.|\\s)*)', 'gm');
 };
 
-function replaceExistingProfile(
+const replaceExistingProfile = (
   credentialsFileContents: string,
   temporaryCredentials: AWSCredentials
-): void {
+): void => {
   fs.writeFileSync(
     awsCredentialsFilePath,
     credentialsFileContents.replace(
@@ -19,9 +19,9 @@ function replaceExistingProfile(
       `${temporaryCredentials.toAwsFormat()}\r\n`
     )
   );
-}
+};
 
-function appendNewProfile(temporaryCredentials: AWSCredentials): void {
+const appendNewProfile = (temporaryCredentials: AWSCredentials): void => {
   fs.appendFile(
     awsCredentialsFilePath,
     `\r\n${temporaryCredentials.toAwsFormat()}\r\n`,
@@ -32,9 +32,9 @@ function appendNewProfile(temporaryCredentials: AWSCredentials): void {
       }
     }
   );
-}
+};
 
-export default function overwriteProfile(temporaryCredentials: AWSCredentials): void {
+const overwriteProfile = (temporaryCredentials: AWSCredentials): void => {
   fs.readFile(awsCredentialsFilePath, 'utf-8', (err, data): void => {
     if (err) {
       console.log('No existing AWS credentials file found, writing file...');
@@ -49,4 +49,6 @@ export default function overwriteProfile(temporaryCredentials: AWSCredentials): 
       appendNewProfile(temporaryCredentials);
     }
   });
-}
+};
+
+export default overwriteProfile;
