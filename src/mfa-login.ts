@@ -1,6 +1,24 @@
 import AWS, { STS, AWSError } from 'aws-sdk';
 import { GetSessionTokenRequest } from 'aws-sdk/clients/sts';
 
+export interface ProfileConfiguration {
+  profileName: string;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  mfaEnabled: boolean;
+  mfaDeviceArn: string;
+  lastLoginTimeInSeconds: number;
+  sessionLengthInSeconds: number;
+}
+
+export interface AWSCredentials {
+  profileName: string;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  awsSessionToken: string;
+  toAwsFormat(): string;
+}
+
 const createStsClient = (configuration: ProfileConfiguration): AWS.STS => {
   AWS.config.credentials = new AWS.Credentials(
     configuration.awsAccessKeyId,
@@ -63,21 +81,3 @@ const getTemporaryCredentials = (
 };
 
 export default getTemporaryCredentials;
-
-export interface ProfileConfiguration {
-  profileName: string;
-  awsAccessKeyId: string;
-  awsSecretAccessKey: string;
-  mfaEnabled: boolean;
-  mfaDeviceArn: string;
-  lastLoginTimeInSeconds: number;
-  sessionLengthInSeconds: number;
-}
-
-export interface AWSCredentials {
-  profileName: string;
-  awsAccessKeyId: string;
-  awsSecretAccessKey: string;
-  awsSessionToken: string;
-  toAwsFormat(): string;
-}
