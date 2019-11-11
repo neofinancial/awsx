@@ -1,6 +1,10 @@
 import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
+import { initConfig, addNewProfile } from 'config';
+
+import { ProfileConfiguration } from './mfa-login';
+
 const profiles = ['development', 'staging', 'production'];
 let currentProfile = '';
 
@@ -34,12 +38,24 @@ const addProfile = async (
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
+  initConfig();
+
   if (name && accessKey && secretKey) {
-    console.log('add profile', name, accessKey, secretKey);
+    const profile: ProfileConfiguration = {
+      profileName: name,
+      awsAccessKeyId: accessKey,
+      awsSecretAccessKey: secretKey,
+      mfaEnabled: false
+    };
 
     if (mfaArn && mfaExpiry) {
-      console.log('profile mfa', mfaArn, mfaExpiry);
+      profile.mfaEnabled = true;
+      profile.mfaDeviceArn = mfaArn;
+      profile.sessionLengthInSeconds = mfaExpiry;
     }
+
+    addNewProfile(profile);
+    console.log(`Added new profile '${name}'`);
   } else {
     const profileAnswers = await inquirer.prompt([
       {
@@ -64,6 +80,13 @@ const addProfile = async (
       }
     ]);
 
+    const profile: ProfileConfiguration = {
+      profileName: profileAnswers.profile,
+      awsAccessKeyId: profileAnswers.accessKey,
+      awsSecretAccessKey: profileAnswers.secretKey,
+      mfaEnabled: profileAnswers.useMfa
+    };
+
     if (profileAnswers.useMfa) {
       const mfaAnswers = await inquirer.prompt([
         {
@@ -79,10 +102,12 @@ const addProfile = async (
         }
       ]);
 
-      console.log(profileAnswers, mfaAnswers);
-    } else {
-      console.log(profileAnswers);
+      profile.mfaDeviceArn = mfaAnswers.mfaArn;
+      profile.sessionLengthInSeconds = mfaAnswers.mfaExpiry;
     }
+
+    addNewProfile(profile);
+    console.log(`Added new profile '${profile.profileName}'`);
   }
 };
 
@@ -132,7 +157,7 @@ yargs
         })
         .positional('mfa-expiry', {
           type: 'number',
-          describe: 'The secret key for the new profile',
+          describe: 'MFA session token duration in seconds (between 900 and 129600)',
           default: 3600
         })
         .implies('profile', ['access-key', 'secret-key']),

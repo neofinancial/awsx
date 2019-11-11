@@ -12,7 +12,8 @@
     "node": "^10.0.0"
   },
   "bin": {
-    "awsx": "bin/awsx.js"
+    "_awsx_prompt": "./bin/awsx.js",
+    "_awsx": "./run.sh"
   },
   "scripts": {
     "start": "ts-node src/app.ts",
@@ -41,6 +42,7 @@
   "dependencies": {
     "aws-sdk": "^2.562.0",
     "chalk": "^2.4.2",
+    "ini": "^1.3.5",
     "inquirer": "^7.0.0",
     "yargs": "^14.2.0"
   },

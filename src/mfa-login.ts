@@ -6,9 +6,9 @@ export interface ProfileConfiguration {
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   mfaEnabled: boolean;
-  mfaDeviceArn: string;
-  lastLoginTimeInSeconds: number;
-  sessionLengthInSeconds: number;
+  mfaDeviceArn?: string;
+  lastLoginTimeInSeconds?: number;
+  sessionLengthInSeconds?: number;
 }
 
 export interface AWSCredentials {
