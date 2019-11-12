@@ -24,10 +24,40 @@ const printConfig = (): void => {
 const addNewProfile = (profile: ProfileConfiguration): void => {
   initConfig();
 
-  const existingProfiles = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
+  let existingProfiles;
+  try {
+    existingProfiles = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
+  } catch (err) {
+    existingProfiles = {};
+  }
+
   existingProfiles[profile.profileName] = profile;
 
   fs.writeFileSync(AWSX_PROFILE_PATH, ini.stringify(existingProfiles));
 };
 
-export { printConfig, addNewProfile, initConfig };
+const getProfiles = (): ProfileConfiguration[] => {
+  let config;
+  try {
+    config = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
+  } catch (err) {
+    config = {};
+  }
+
+  const profiles: ProfileConfiguration[] = [];
+  for (const profileName in config) {
+    profiles.push(config[profileName]);
+  }
+
+  return profiles;
+};
+
+const getProfileNames = (): string[] => {
+  return getProfiles().map(profile => profile.profileName);
+};
+
+const getProfile = (profileName: string): ProfileConfiguration | undefined => {
+  return getProfiles().find(profile => profile.profileName === profileName);
+};
+
+export { printConfig, addNewProfile, initConfig, getProfile, getProfileNames };

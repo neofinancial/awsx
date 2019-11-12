@@ -56,11 +56,11 @@ const createTemporaryCredentials = (
 
 const getTemporaryCredentials = (
   configuration: ProfileConfiguration,
-  mfaToken: string
-): AWSCredentials => {
-  let temporaryCredentials = {};
-
+  mfaToken: string,
+  onLogin: (credentials: AWSCredentials) => void
+): void => {
   const stsParameters = createStsParameters(configuration, mfaToken);
+
   createStsClient(configuration).getSessionToken(
     stsParameters,
     (err: AWSError, data: STS.Types.GetSessionTokenResponse): void => {
@@ -69,15 +69,10 @@ const getTemporaryCredentials = (
       }
 
       if (data && data.Credentials) {
-        temporaryCredentials = createTemporaryCredentials(
-          configuration.profileName,
-          data.Credentials
-        );
+        onLogin(createTemporaryCredentials(configuration.profileName, data.Credentials));
       }
     }
   );
-
-  return temporaryCredentials as AWSCredentials;
 };
 
 export default getTemporaryCredentials;

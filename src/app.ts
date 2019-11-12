@@ -1,14 +1,21 @@
 import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
-import { initConfig, addNewProfile } from 'config';
+import { initConfig, addNewProfile, getProfileNames, getProfile } from 'config';
 
-import { ProfileConfiguration } from './mfa-login';
+import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
 
-const profiles = ['development', 'staging', 'production'];
+initConfig();
+const profiles = getProfileNames();
 let currentProfile = '';
 
 const switchProfile = async (name?: string): Promise<void> => {
+  if (profiles.length === 0) {
+    console.error(`No profiles are configured, run 'awsx add-profile' first.`);
+
+    return;
+  }
+
   if (name) {
     console.log('switch profile', name);
     currentProfile = name;
@@ -23,11 +30,39 @@ const switchProfile = async (name?: string): Promise<void> => {
       }
     ]);
 
-    console.log(answers);
     // eslint-disable-next-line require-atomic-updates
     currentProfile = answers.profile;
+  }
+
+  const selectedProfile = getProfile(currentProfile);
+  if (!selectedProfile) {
+    console.error(
+      `No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`
+    );
 
     return;
+  }
+
+  if (selectedProfile.mfaEnabled) {
+    const mfaAnswer = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'token',
+        message: 'MFA token'
+      }
+    ]);
+
+    getTemporaryCredentials(
+      selectedProfile,
+      mfaAnswer.token,
+      (credentials: AWSCredentials): void => {
+        //write them to the credentials file
+        //export env vars
+        console.log(JSON.stringify(credentials));
+      }
+    );
+  } else {
+    //just export the env vars
   }
 };
 
@@ -38,8 +73,6 @@ const addProfile = async (
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
-  initConfig();
-
   if (name && accessKey && secretKey) {
     const profile: ProfileConfiguration = {
       profileName: name,
