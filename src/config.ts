@@ -10,8 +10,7 @@ const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
 const AWS_CREDENTIALS_PATH = `${AWS_HOME}/credentials`;
 
 const initConfig = (): void => {
-  const awsxHomeExists = fs.existsSync(AWSX_HOME);
-  if (!awsxHomeExists) {
+  if (!fs.existsSync(AWSX_HOME)) {
     fs.mkdirSync(AWSX_HOME);
   }
 };
@@ -22,12 +21,10 @@ const printConfig = (): void => {
 };
 
 const addNewProfile = (profile: ProfileConfiguration): void => {
-  initConfig();
-
   let existingProfiles;
   try {
     existingProfiles = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
-  } catch (err) {
+  } catch (error) {
     existingProfiles = {};
   }
 
@@ -40,7 +37,7 @@ const getProfiles = (): ProfileConfiguration[] => {
   let config;
   try {
     config = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
-  } catch (err) {
+  } catch (error) {
     config = {};
   }
 
