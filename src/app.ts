@@ -1,11 +1,10 @@
 import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
-import { initConfig, addNewProfile, getProfileNames, getProfile } from 'config';
+import { initConfig, addNewProfile, getProfileNames, getProfile } from './config';
 
 import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
 
-initConfig();
 const profiles = getProfileNames();
 let currentProfile = '';
 
@@ -56,13 +55,12 @@ const switchProfile = async (name?: string): Promise<void> => {
       selectedProfile,
       mfaAnswer.token,
       (credentials: AWSCredentials): void => {
-        //write them to the credentials file
-        //export env vars
+        // TODO: write to the credentials file && export env vars
         console.log(JSON.stringify(credentials));
       }
     );
   } else {
-    //just export the env vars
+    //TODO: just export the env vars
   }
 };
 
@@ -156,6 +154,7 @@ yargs
         type: 'string'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
+      initConfig();
       await switchProfile(args.profile);
     }
   })
@@ -201,6 +200,7 @@ yargs
       mfaArn?: string;
       mfaExpiry?: number;
     }): Promise<void> => {
+      initConfig();
       await addProfile(args.profile, args.accessKey, args.secretKey, args.mfaArn, args.mfaExpiry);
     }
   })

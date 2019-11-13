@@ -13,7 +13,7 @@
   },
   "bin": {
     "_awsx_prompt": "./bin/awsx.js",
-    "_awsx": "./run.sh"
+    "_awsx": "./bin/run.sh"
   },
   "scripts": {
     "start": "ts-node src/app.ts",
@@ -47,6 +47,7 @@
     "yargs": "^14.2.0"
   },
   "devDependencies": {
+    "@types/ini": "^1.3.30",
     "@types/inquirer": "^6.5.0",
     "@types/node": "^12.7.12",
     "@types/yargs": "^13.0.3",
