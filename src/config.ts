@@ -41,12 +41,7 @@ const getProfiles = (): ProfileConfiguration[] => {
     config = {};
   }
 
-  const profiles: ProfileConfiguration[] = [];
-  for (const profileName in config) {
-    profiles.push(config[profileName]);
-  }
-
-  return profiles;
+  return Object.values(config);
 };
 
 const getProfileNames = (): string[] => {
