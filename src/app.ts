@@ -1,9 +1,16 @@
 import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
-import { initConfig, addNewProfile, getProfileNames, getProfile } from './config';
+import {
+  initConfig,
+  addNewProfile,
+  getProfileNames,
+  getProfile,
+  writeTemporaryCredentials
+} from './config';
 
 import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
+import exportEnvironmentVariables from './exporter';
 
 const profiles = getProfileNames();
 let currentProfile = '';
@@ -55,12 +62,21 @@ const switchProfile = async (name?: string): Promise<void> => {
       selectedProfile,
       mfaAnswer.token,
       (credentials: AWSCredentials): void => {
-        // TODO: write to the credentials file && export env vars
-        console.log(JSON.stringify(credentials));
+        writeTemporaryCredentials(selectedProfile, credentials);
+        exportEnvironmentVariables(
+          selectedProfile.profileName,
+          credentials.awsAccessKeyId,
+          credentials.awsSecretAccessKey,
+          credentials.awsSessionToken
+        );
       }
     );
   } else {
-    //TODO: just export the env vars
+    exportEnvironmentVariables(
+      selectedProfile.profileName,
+      selectedProfile.awsAccessKeyId,
+      selectedProfile.awsSecretAccessKey
+    );
   }
 };
 
