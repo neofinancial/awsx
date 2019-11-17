@@ -1,10 +1,20 @@
 import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
-const profiles = ['development', 'staging', 'production'];
+import { initConfig, addNewProfile, getProfileNames, getProfile } from './config';
+
+import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
+
+const profiles = getProfileNames();
 let currentProfile = '';
 
 const switchProfile = async (name?: string): Promise<void> => {
+  if (profiles.length === 0) {
+    console.error(`No profiles are configured, run 'awsx add-profile' first.`);
+
+    return;
+  }
+
   if (name) {
     console.log('switch profile', name);
     currentProfile = name;
@@ -19,11 +29,38 @@ const switchProfile = async (name?: string): Promise<void> => {
       }
     ]);
 
-    console.log(answers);
     // eslint-disable-next-line require-atomic-updates
     currentProfile = answers.profile;
+  }
+
+  const selectedProfile = getProfile(currentProfile);
+  if (!selectedProfile) {
+    console.error(
+      `No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`
+    );
 
     return;
+  }
+
+  if (selectedProfile.mfaEnabled) {
+    const mfaAnswer = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'token',
+        message: 'MFA token'
+      }
+    ]);
+
+    getTemporaryCredentials(
+      selectedProfile,
+      mfaAnswer.token,
+      (credentials: AWSCredentials): void => {
+        // TODO: write to the credentials file && export env vars
+        console.log(JSON.stringify(credentials));
+      }
+    );
+  } else {
+    //TODO: just export the env vars
   }
 };
 
@@ -35,11 +72,21 @@ const addProfile = async (
   mfaExpiry?: number
 ): Promise<void> => {
   if (name && accessKey && secretKey) {
-    console.log('add profile', name, accessKey, secretKey);
+    const profile: ProfileConfiguration = {
+      profileName: name,
+      awsAccessKeyId: accessKey,
+      awsSecretAccessKey: secretKey,
+      mfaEnabled: false
+    };
 
     if (mfaArn && mfaExpiry) {
-      console.log('profile mfa', mfaArn, mfaExpiry);
+      profile.mfaEnabled = true;
+      profile.mfaDeviceArn = mfaArn;
+      profile.sessionLengthInSeconds = mfaExpiry;
     }
+
+    addNewProfile(profile);
+    console.log(`Added new profile '${name}'`);
   } else {
     const profileAnswers = await inquirer.prompt([
       {
@@ -64,6 +111,13 @@ const addProfile = async (
       }
     ]);
 
+    const profile: ProfileConfiguration = {
+      profileName: profileAnswers.profile,
+      awsAccessKeyId: profileAnswers.accessKey,
+      awsSecretAccessKey: profileAnswers.secretKey,
+      mfaEnabled: profileAnswers.useMfa
+    };
+
     if (profileAnswers.useMfa) {
       const mfaAnswers = await inquirer.prompt([
         {
@@ -79,10 +133,12 @@ const addProfile = async (
         }
       ]);
 
-      console.log(profileAnswers, mfaAnswers);
-    } else {
-      console.log(profileAnswers);
+      profile.mfaDeviceArn = mfaAnswers.mfaArn;
+      profile.sessionLengthInSeconds = mfaAnswers.mfaExpiry;
     }
+
+    addNewProfile(profile);
+    console.log(`Added new profile '${profile.profileName}'`);
   }
 };
 
@@ -98,6 +154,7 @@ yargs
         type: 'string'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
+      initConfig();
       await switchProfile(args.profile);
     }
   })
@@ -132,7 +189,7 @@ yargs
         })
         .positional('mfa-expiry', {
           type: 'number',
-          describe: 'The secret key for the new profile',
+          describe: 'MFA session token duration in seconds (between 900 and 129600)',
           default: 3600
         })
         .implies('profile', ['access-key', 'secret-key']),
@@ -143,6 +200,7 @@ yargs
       mfaArn?: string;
       mfaExpiry?: number;
     }): Promise<void> => {
+      initConfig();
       await addProfile(args.profile, args.accessKey, args.secretKey, args.mfaArn, args.mfaExpiry);
     }
   })
