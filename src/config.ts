@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/camelcase */
 import fs from 'fs';
 import ini from 'ini';
 
@@ -20,28 +21,54 @@ const printConfig = (): void => {
   console.log('aws credentials', ini.parse(fs.readFileSync(AWS_CREDENTIALS_PATH, 'utf-8')));
 };
 
-const addNewProfile = (profile: ProfileConfiguration): void => {
-  let existingProfiles;
+const getConfig = (filePath: string): any => {
   try {
-    existingProfiles = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
+    return ini.parse(fs.readFileSync(filePath, 'utf-8'));
   } catch (error) {
-    existingProfiles = {};
+    return {};
+  }
+};
+
+const writeConfig = (filePath: string, object: any): void => {
+  fs.writeFileSync(filePath, ini.stringify(object));
+};
+
+const addNewProfile = (profile: ProfileConfiguration): void => {
+  if (profile.mfaEnabled) {
+    const awsxConfig = getConfig(AWSX_PROFILE_PATH);
+    awsxConfig[profile.profileName] = profile;
+    writeConfig(AWSX_PROFILE_PATH, awsxConfig);
   }
 
-  existingProfiles[profile.profileName] = profile;
+  const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+  awsCredentials[profile.profileName] = {
+    aws_access_key_id: profile.awsAccessKeyId,
+    aws_secret_access_key: profile.awsSecretAccessKey
+  };
 
-  fs.writeFileSync(AWSX_PROFILE_PATH, ini.stringify(existingProfiles));
+  writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
 
 const getProfiles = (): ProfileConfiguration[] => {
-  let config;
-  try {
-    config = ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8'));
-  } catch (error) {
-    config = {};
+  const awsxConfig = getConfig(AWSX_PROFILE_PATH);
+  const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+
+  const profiles = [];
+
+  for (const profile in awsCredentials) {
+    if (awsxConfig[profile] && awsxConfig[profile].mfaEnabled) {
+      profiles.push(awsxConfig[profile]);
+    } else {
+      profiles.push({
+        profileName: profile,
+        awsAccessKeyId: awsCredentials[profile].aws_access_key_id,
+        awsSecretAccessKey: awsCredentials[profile].aws_secret_access_key,
+        mfaEnabled: false
+      });
+    }
   }
 
-  return Object.values(config);
+  return profiles;
 };
 
 const getProfileNames = (): string[] => {
