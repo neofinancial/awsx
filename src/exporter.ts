@@ -2,10 +2,7 @@ import fs from 'fs';
 
 const AWSX_HOME = `${process.env.HOME}/.awsx`;
 
-const PROFILE_PATH = `${AWSX_HOME}/export-profile`;
-const ACCESS_KEY_PATH = `${AWSX_HOME}/export-access-key`;
-const SECRET_KEY_PATH = `${AWSX_HOME}/export-secret-key`;
-const SESSION_TOKEN_PATH = `${AWSX_HOME}/export-session-token`;
+const EXPORTS_PATH = `${AWSX_HOME}/exports.sh`;
 
 const exportEnvironmentVariables = (
   profile: string,
@@ -13,12 +10,13 @@ const exportEnvironmentVariables = (
   secretKey: string,
   sessionToken?: string
 ): void => {
-  fs.writeFileSync(PROFILE_PATH, profile);
-  fs.writeFileSync(ACCESS_KEY_PATH, accessKey);
-  fs.writeFileSync(SECRET_KEY_PATH, secretKey);
+  let exportScript = `export AWS_PROFILE=${profile} AWS_ACCESS_KEY_ID=${accessKey} AWS_SECRET_ACCESS_KEY=${secretKey}`;
+
   if (sessionToken) {
-    fs.writeFileSync(SESSION_TOKEN_PATH, sessionToken);
+    exportScript += ` AWS_SESSION_TOKEN=${sessionToken}`;
   }
+
+  fs.writeFileSync(EXPORTS_PATH, exportScript);
 };
 
 export default exportEnvironmentVariables;

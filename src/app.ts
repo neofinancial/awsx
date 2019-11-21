@@ -63,12 +63,15 @@ const switchProfile = async (name?: string): Promise<void> => {
       mfaAnswer.token,
       (credentials: AWSCredentials): void => {
         writeTemporaryCredentials(selectedProfile, credentials);
+
         exportEnvironmentVariables(
           selectedProfile.profileName,
           credentials.awsAccessKeyId,
           credentials.awsSecretAccessKey,
           credentials.awsSessionToken
         );
+
+        console.log(`Switched to profile '${selectedProfile.profileName}'`);
       }
     );
   } else {
@@ -77,6 +80,8 @@ const switchProfile = async (name?: string): Promise<void> => {
       selectedProfile.awsAccessKeyId,
       selectedProfile.awsSecretAccessKey
     );
+
+    console.log(`Switched to profile '${selectedProfile.profileName}'`);
   }
 };
 
