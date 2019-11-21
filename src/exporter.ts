@@ -1,7 +1,6 @@
 import fs from 'fs';
 
 const AWSX_HOME = `${process.env.HOME}/.awsx`;
-
 const EXPORTS_PATH = `${AWSX_HOME}/exports.sh`;
 
 const exportEnvironmentVariables = (

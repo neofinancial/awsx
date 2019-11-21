@@ -80,11 +80,13 @@ const writeTemporaryCredentials = (
 ): void => {
   if (profile.mfaEnabled) {
     const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+
     awsCredentials[profile.profileName] = {
       aws_access_key_id: credentials.awsAccessKeyId,
       aws_secret_access_key: credentials.awsSecretAccessKey,
       aws_session_token: credentials.awsSessionToken
     };
+
     writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
   }
 };
