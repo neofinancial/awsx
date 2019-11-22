@@ -4,7 +4,7 @@ import ini from 'ini';
 
 import { ProfileConfiguration, AWSCredentials } from './mfa-login';
 
-const AWSX_HOME = `${process.env.HOME}/.awsx`;
+export const AWSX_HOME = `${process.env.HOME}/.awsx`;
 const AWS_HOME = `${process.env.HOME}/.aws`;
 
 const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;

@@ -70,8 +70,6 @@ const switchProfile = async (name?: string): Promise<void> => {
           credentials.awsSecretAccessKey,
           credentials.awsSessionToken
         );
-
-        console.log(`Switched to profile '${selectedProfile.profileName}'`);
       }
     );
   } else {
@@ -80,8 +78,6 @@ const switchProfile = async (name?: string): Promise<void> => {
       selectedProfile.awsAccessKeyId,
       selectedProfile.awsSecretAccessKey
     );
-
-    console.log(`Switched to profile '${selectedProfile.profileName}'`);
   }
 };
 
