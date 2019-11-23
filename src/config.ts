@@ -2,9 +2,9 @@
 import fs from 'fs';
 import ini from 'ini';
 
-import { ProfileConfiguration } from './mfa-login';
+import { ProfileConfiguration, AWSCredentials } from './mfa-login';
 
-const AWSX_HOME = `${process.env.HOME}/.awsx`;
+export const AWSX_HOME = `${process.env.HOME}/.awsx`;
 const AWS_HOME = `${process.env.HOME}/.aws`;
 
 const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
@@ -14,11 +14,6 @@ const initConfig = (): void => {
   if (!fs.existsSync(AWSX_HOME)) {
     fs.mkdirSync(AWSX_HOME);
   }
-};
-
-const printConfig = (): void => {
-  console.log('awsx profiles', ini.parse(fs.readFileSync(AWSX_PROFILE_PATH, 'utf-8')));
-  console.log('aws credentials', ini.parse(fs.readFileSync(AWS_CREDENTIALS_PATH, 'utf-8')));
 };
 
 const getConfig = (filePath: string): any => {
@@ -79,4 +74,21 @@ const getProfile = (profileName: string): ProfileConfiguration | undefined => {
   return getProfiles().find(profile => profile.profileName === profileName);
 };
 
-export { printConfig, addNewProfile, initConfig, getProfile, getProfileNames };
+const writeTemporaryCredentials = (
+  profile: ProfileConfiguration,
+  credentials: AWSCredentials
+): void => {
+  if (profile.mfaEnabled) {
+    const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+
+    awsCredentials[profile.profileName] = {
+      aws_access_key_id: credentials.awsAccessKeyId,
+      aws_secret_access_key: credentials.awsSecretAccessKey,
+      aws_session_token: credentials.awsSessionToken
+    };
+
+    writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
+  }
+};
+
+export { writeTemporaryCredentials, addNewProfile, initConfig, getProfile, getProfileNames };
