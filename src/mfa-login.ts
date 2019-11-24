@@ -17,7 +17,6 @@ export interface AWSCredentials {
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   awsSessionToken: string;
-  toAwsFormat(): string;
 }
 
 const createStsClient = (configuration: ProfileConfiguration): AWS.STS => {
@@ -49,9 +48,6 @@ const createTemporaryCredentials = (
     awsAccessKeyId: credentials.AccessKeyId,
     awsSecretAccessKey: credentials.SecretAccessKey,
     awsSessionToken: credentials.SessionToken,
-    toAwsFormat: (): string => {
-      return `[${profileName}]\r\naws_access_key_id = ${credentials.AccessKeyId}\r\naws_secret_access_key = ${credentials.SecretAccessKey}\r\naws_session_token = ${credentials.SessionToken}`;
-    }
   };
 };
 

@@ -6,7 +6,8 @@ import {
   addNewProfile,
   getProfileNames,
   getProfile,
-  writeTemporaryCredentials
+  writeTemporaryCredentials,
+  getCredentials
 } from './config';
 
 import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
@@ -15,7 +16,20 @@ import exportEnvironmentVariables from './exporter';
 const profiles = getProfileNames();
 let currentProfile = '';
 
-const switchProfile = async (name?: string): Promise<void> => {
+const lastMFASessionStillValid = (profile: ProfileConfiguration): boolean => {
+  if (
+    profile.lastLoginTimeInSeconds &&
+    profile.sessionLengthInSeconds &&
+    profile.lastLoginTimeInSeconds + (profile.sessionLengthInSeconds - 30) >
+      Math.floor(new Date().getTime() / 1000)
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
   if (profiles.length === 0) {
     console.error(`No profiles are configured, run 'awsx add-profile' first.`);
 
@@ -23,7 +37,7 @@ const switchProfile = async (name?: string): Promise<void> => {
   }
 
   if (name) {
-    console.log('switch profile', name);
+    console.log('switched to profile', name);
     currentProfile = name;
   } else {
     const answers = await inquirer.prompt([
@@ -50,6 +64,19 @@ const switchProfile = async (name?: string): Promise<void> => {
   }
 
   if (selectedProfile.mfaEnabled) {
+    const lastCredentials = getCredentials(selectedProfile.profileName);
+
+    if (!forceMFA && lastCredentials && lastMFASessionStillValid(selectedProfile)) {
+      exportEnvironmentVariables(
+        selectedProfile.profileName,
+        lastCredentials.awsAccessKeyId,
+        lastCredentials.awsSecretAccessKey,
+        lastCredentials.awsSessionToken
+      );
+
+      return;
+    }
+
     const mfaAnswer = await inquirer.prompt([
       {
         type: 'input',
@@ -175,14 +202,21 @@ yargs
   .command({
     command: '$0 [profile]',
     describe: 'Switch profiles',
-    builder: (yargs): Argv<{ profile?: string }> =>
-      yargs.positional('profile', {
-        describe: 'The name of the profile to switch to',
-        type: 'string'
-      }),
-    handler: async (args: { profile?: string }): Promise<void> => {
+    builder: (yargs): Argv<{ profile?: string; f?: boolean }> =>
+      yargs
+        .positional('profile', {
+          describe: 'The name of the profile to switch to',
+          type: 'string'
+        })
+        .option('f', {
+          alias: 'forceMFA',
+          describe: 'If the selected profile has MFA enabled, forces a new MFA session',
+          type: 'boolean',
+          default: false
+        }),
+    handler: async (args: { profile?: string; f?: boolean }): Promise<void> => {
       initConfig();
-      await switchProfile(args.profile);
+      await switchProfile(args.profile, args.f);
     }
   })
   .command({

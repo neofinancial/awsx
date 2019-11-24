@@ -80,6 +80,16 @@ const writeTemporaryCredentials = (
   credentials: AWSCredentials
 ): void => {
   if (profile.mfaEnabled) {
+
+    // record login time
+    const awsxProfiles = getConfig(AWSX_PROFILE_PATH);
+    awsxProfiles[profile.profileName].lastLoginTimeInSeconds = Math.floor(
+      new Date().getTime() / 1000
+    );
+
+    writeConfig(AWSX_PROFILE_PATH, awsxProfiles);
+
+    // write temporary credentials to aws credentials file
     const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
 
     awsCredentials[profile.profileName] = {
@@ -93,4 +103,26 @@ const writeTemporaryCredentials = (
   }
 };
 
-export { writeTemporaryCredentials, addNewProfile, initConfig, getProfile, getProfileNames };
+const getCredentials = (profileName: string): AWSCredentials | null => {
+  const credentials = getConfig(AWS_CREDENTIALS_PATH)[profileName];
+
+  if (!credentials) {
+    return null;
+  }
+
+  return {
+    profileName: profileName,
+    awsAccessKeyId: credentials.aws_access_key_id,
+    awsSecretAccessKey: credentials.aws_secret_access_key,
+    awsSessionToken: credentials.aws_session_token
+  };
+};
+
+export {
+  writeTemporaryCredentials,
+  addNewProfile,
+  initConfig,
+  getProfile,
+  getProfileNames,
+  getCredentials
+};
