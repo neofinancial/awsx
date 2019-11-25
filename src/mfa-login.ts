@@ -5,6 +5,7 @@ export interface ProfileConfiguration {
   profileName: string;
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
+  awsDefaultRegion: string;
   mfaEnabled: boolean;
   mfaDeviceArn?: string;
   lastLoginTimeInSeconds?: number;

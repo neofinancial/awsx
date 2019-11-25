@@ -58,6 +58,7 @@ const getProfiles = (): ProfileConfiguration[] => {
         profileName: profile,
         awsAccessKeyId: awsCredentials[profile].aws_access_key_id,
         awsSecretAccessKey: awsCredentials[profile].aws_secret_access_key,
+        awsDefaultRegion: awsCredentials[profile].aws_default_region,
         mfaEnabled: false
       });
     }
@@ -84,7 +85,8 @@ const writeTemporaryCredentials = (
     awsCredentials[profile.profileName] = {
       aws_access_key_id: credentials.awsAccessKeyId,
       aws_secret_access_key: credentials.awsSecretAccessKey,
-      aws_session_token: credentials.awsSessionToken
+      aws_session_token: credentials.awsSessionToken,
+      aws_default_region: profile.awsDefaultRegion
     };
 
     writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
