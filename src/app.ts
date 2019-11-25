@@ -68,6 +68,7 @@ const switchProfile = async (name?: string): Promise<void> => {
           selectedProfile.profileName,
           credentials.awsAccessKeyId,
           credentials.awsSecretAccessKey,
+          selectedProfile.awsDefaultRegion,
           credentials.awsSessionToken
         );
       }
@@ -76,7 +77,8 @@ const switchProfile = async (name?: string): Promise<void> => {
     exportEnvironmentVariables(
       selectedProfile.profileName,
       selectedProfile.awsAccessKeyId,
-      selectedProfile.awsSecretAccessKey
+      selectedProfile.awsSecretAccessKey,
+      selectedProfile.awsDefaultRegion
     );
   }
 };
@@ -85,14 +87,16 @@ const addProfile = async (
   name?: string,
   accessKey?: string,
   secretKey?: string,
+  defaultRegion?: string,
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
-  if (name && accessKey && secretKey) {
+  if (name && accessKey && secretKey && defaultRegion) {
     const profile: ProfileConfiguration = {
       profileName: name,
       awsAccessKeyId: accessKey,
       awsSecretAccessKey: secretKey,
+      awsDefaultRegion: defaultRegion,
       mfaEnabled: false
     };
 
@@ -122,6 +126,11 @@ const addProfile = async (
         message: 'Secret key'
       },
       {
+        type: 'input',
+        name: 'defaultRegion',
+        message: 'Default region'
+      },
+      {
         type: 'confirm',
         name: 'useMfa',
         message: 'Use MFA'
@@ -132,6 +141,7 @@ const addProfile = async (
       profileName: profileAnswers.profile,
       awsAccessKeyId: profileAnswers.accessKey,
       awsSecretAccessKey: profileAnswers.secretKey,
+      awsDefaultRegion: profileAnswers.defaultRegion,
       mfaEnabled: profileAnswers.useMfa
     };
 
@@ -176,7 +186,7 @@ yargs
     }
   })
   .command({
-    command: 'add-profile [profile] [access-key] [secret-key] [mfa-arn] [mfa-expiry]',
+    command: 'add-profile [profile] [access-key] [secret-key] [default-region] [mfa-arn] [mfa-expiry]',
     describe: 'Add profile',
     builder: (
       yargs
@@ -184,6 +194,7 @@ yargs
       profile?: string;
       'access-key'?: string;
       'secret-key'?: string;
+      'default-region'?: string;
       'mfa-arn'?: string;
       'mfa-expiry'?: number;
     }> =>
@@ -200,9 +211,13 @@ yargs
           type: 'string',
           describe: 'The secret key for the new profile'
         })
+        .positional('default-region', {
+          type: 'string',
+          describe: 'The default AWS region for the new profile'
+        })
         .positional('mfa-arn', {
           type: 'string',
-          describe: 'The ARN of the MFA device for the profile '
+          describe: 'The ARN of the MFA device for the new profile'
         })
         .positional('mfa-expiry', {
           type: 'number',
@@ -214,11 +229,19 @@ yargs
       profile?: string;
       accessKey?: string;
       secretKey?: string;
+      defaultRegion?: string;
       mfaArn?: string;
       mfaExpiry?: number;
     }): Promise<void> => {
       initConfig();
-      await addProfile(args.profile, args.accessKey, args.secretKey, args.mfaArn, args.mfaExpiry);
+      await addProfile(
+        args.profile,
+        args.accessKey,
+        args.secretKey,
+        args.defaultRegion,
+        args.mfaArn,
+        args.mfaExpiry
+      );
     }
   })
   .help().argv;
