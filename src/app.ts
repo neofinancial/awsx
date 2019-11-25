@@ -71,6 +71,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
         selectedProfile.profileName,
         lastCredentials.awsAccessKeyId,
         lastCredentials.awsSecretAccessKey,
+        selectedProfile.awsDefaultRegion,
         lastCredentials.awsSessionToken
       );
 
@@ -208,15 +209,15 @@ yargs
           describe: 'The name of the profile to switch to',
           type: 'string'
         })
-        .option('f', {
-          alias: 'forceMFA',
+        .option('force-mfa', {
+          alias: 'f',
           describe: 'If the selected profile has MFA enabled, forces a new MFA session',
           type: 'boolean',
           default: false
         }),
-    handler: async (args: { profile?: string; f?: boolean }): Promise<void> => {
+    handler: async (args: { profile?: string; forceMfa?: boolean }): Promise<void> => {
       initConfig();
-      await switchProfile(args.profile, args.f);
+      await switchProfile(args.profile, args.forceMfa);
     }
   })
   .command({
