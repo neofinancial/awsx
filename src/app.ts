@@ -289,6 +289,7 @@ const enableMfa = async (name?: string): Promise<void> => {
     }
   ]);
 
+  deleteProfile(profileName);
   addNewProfile({
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
@@ -300,6 +301,70 @@ const enableMfa = async (name?: string): Promise<void> => {
   });
 
   console.log(`Enabled MFA on profile '${profileName}'`);
+};
+
+const disableMfa = async (name?: string): Promise<void> => {
+  let profileName = '';
+
+  if (name) {
+    profileName = name;
+  } else {
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: profiles,
+        default: currentProfile || profiles[0]
+      }
+    ]);
+
+    profileName = answers.profile;
+  }
+
+  const selectedProfile = getProfile(profileName);
+
+  if (!selectedProfile) {
+    console.error(`No profile '${profileName}' found.`);
+
+    return;
+  }
+
+  if (!selectedProfile.mfaEnabled) {
+    return;
+  }
+
+  const profileAnswers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'accessKey',
+      message: 'Access key',
+      default: selectedProfile.awsAccessKeyId
+    },
+    {
+      type: 'input',
+      name: 'secretKey',
+      message: 'Secret key',
+      default: selectedProfile.awsSecretAccessKey
+    },
+    {
+      type: 'input',
+      name: 'defaultRegion',
+      message: 'Default region',
+      default: selectedProfile.awsDefaultRegion
+    }
+  ]);
+
+  deleteProfile(profileName);
+  addNewProfile({
+    profileName: profileName,
+    awsAccessKeyId: profileAnswers.accessKey,
+    awsSecretAccessKey: profileAnswers.secretKey,
+    awsDefaultRegion: profileAnswers.defaultRegion,
+    mfaEnabled: false
+  });
+
+  console.log(`Disabled MFA on profile '${profileName}'`);
 };
 
 yargs
@@ -415,6 +480,22 @@ yargs
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
       await enableMfa(args.profile);
+    }
+  })
+  .command({
+    command: 'disable-mfa [profile]',
+    describe: 'Disable MFA on an existing profile',
+    builder: (
+      yargs
+    ): Argv<{
+      profile?: string;
+    }> =>
+      yargs.positional('profile', {
+        type: 'string',
+        describe: 'The name of the profile to disable MFA'
+      }),
+    handler: async (args: { profile?: string }): Promise<void> => {
+      await disableMfa(args.profile);
     }
   })
   .help().argv;
