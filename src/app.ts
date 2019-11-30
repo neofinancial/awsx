@@ -16,19 +16,6 @@ import exportEnvironmentVariables from './exporter';
 const profiles = getProfileNames();
 let currentProfile = '';
 
-const lastMFASessionStillValid = (profile: ProfileConfiguration): boolean => {
-  if (
-    profile.lastLoginTimeInSeconds &&
-    profile.sessionLengthInSeconds &&
-    profile.lastLoginTimeInSeconds + (profile.sessionLengthInSeconds - 30) >
-      Math.floor(new Date().getTime() / 1000)
-  ) {
-    return true;
-  }
-
-  return false;
-};
-
 const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
   if (profiles.length === 0) {
     console.error(`No profiles are configured, run 'awsx add-profile' first.`);
@@ -66,7 +53,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
   if (selectedProfile.mfaEnabled) {
     const lastCredentials = getCredentials(selectedProfile.profileName);
 
-    if (!forceMFA && lastCredentials && lastMFASessionStillValid(selectedProfile)) {
+    if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
       exportEnvironmentVariables(
         selectedProfile.profileName,
         lastCredentials.awsAccessKeyId,
@@ -221,7 +208,8 @@ yargs
     }
   })
   .command({
-    command: 'add-profile [profile] [access-key] [secret-key] [default-region] [mfa-arn] [mfa-expiry]',
+    command:
+      'add-profile [profile] [access-key] [secret-key] [default-region] [mfa-arn] [mfa-expiry]',
     describe: 'Add profile',
     builder: (
       yargs

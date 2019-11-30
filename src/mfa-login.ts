@@ -10,6 +10,7 @@ export interface ProfileConfiguration {
   mfaDeviceArn?: string;
   lastLoginTimeInSeconds?: number;
   sessionLengthInSeconds?: number;
+  mfaSessionValid?: boolean;
 }
 
 export interface AWSCredentials {
