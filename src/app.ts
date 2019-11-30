@@ -7,7 +7,8 @@ import {
   getProfileNames,
   getProfile,
   writeTemporaryCredentials,
-  getCredentials
+  getCredentials,
+  deleteProfile
 } from './config';
 
 import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
@@ -184,6 +185,37 @@ const addProfile = async (
   }
 };
 
+const removeProfile = async (name?: string): Promise<void> => {
+  let profileName = name;
+
+  if (!profileName) {
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: profiles,
+        default: currentProfile || profiles[0]
+      }
+    ]);
+
+    profileName = answers.profile;
+  }
+
+  const confirmAnswer = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'confirm',
+      message: `Are you sure you want to remove profile '${profileName}'?`
+    }
+  ]);
+
+  if (profileName && confirmAnswer.confirm) {
+    deleteProfile(profileName);
+    console.log(`Removed profile '${profileName}'`);
+  }
+};
+
 yargs
   .scriptName('awsx')
   .usage('$0 [command]')
@@ -265,6 +297,22 @@ yargs
         args.mfaArn,
         args.mfaExpiry
       );
+    }
+  })
+  .command({
+    command: 'remove-profile [profile]',
+    describe: 'Remove profile',
+    builder: (
+      yargs
+    ): Argv<{
+      profile?: string;
+    }> =>
+      yargs.positional('profile', {
+        type: 'string',
+        describe: 'The name of the profile to delete'
+      }),
+    handler: async (args: { profile?: string }): Promise<void> => {
+      await removeProfile(args.profile);
     }
   })
   .help().argv;

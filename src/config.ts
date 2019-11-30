@@ -44,6 +44,16 @@ const addNewProfile = (profile: ProfileConfiguration): void => {
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
 
+const deleteProfile = (profileName: string): void => {
+  const awsxConfig = getConfig(AWSX_PROFILE_PATH);
+  delete awsxConfig[profileName];
+  writeConfig(AWSX_PROFILE_PATH, awsxConfig);
+
+  const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+  delete awsCredentials[profileName];
+  writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
+};
+
 const isMfaSessionStillValid = (
   lastLoginTimeInSeconds: number,
   sessionLengthInSeconds: number
@@ -142,6 +152,7 @@ const getCredentials = (profileName: string): AWSCredentials | null => {
 export {
   writeTemporaryCredentials,
   addNewProfile,
+  deleteProfile,
   initConfig,
   getProfile,
   getProfileNames,
