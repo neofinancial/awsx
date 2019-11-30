@@ -186,9 +186,11 @@ const addProfile = async (
 };
 
 const removeProfile = async (name?: string): Promise<void> => {
-  let profileName = name;
+  let profileName = '';
 
-  if (!profileName) {
+  if (name) {
+    profileName = name;
+  } else {
     const answers = await inquirer.prompt([
       {
         type: 'list',
@@ -200,6 +202,14 @@ const removeProfile = async (name?: string): Promise<void> => {
     ]);
 
     profileName = answers.profile;
+  }
+
+  const selectedProfile = getProfile(profileName);
+
+  if (!selectedProfile) {
+    console.error(`No profile '${profileName}' found.`);
+
+    return;
   }
 
   const confirmAnswer = await inquirer.prompt([
@@ -214,6 +224,82 @@ const removeProfile = async (name?: string): Promise<void> => {
     deleteProfile(profileName);
     console.log(`Removed profile '${profileName}'`);
   }
+};
+
+const enableMfa = async (name?: string): Promise<void> => {
+  let profileName = '';
+
+  if (name) {
+    profileName = name;
+  } else {
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: profiles,
+        default: currentProfile || profiles[0]
+      }
+    ]);
+
+    profileName = answers.profile;
+  }
+
+  const selectedProfile = getProfile(profileName);
+
+  if (!selectedProfile) {
+    console.error(`No profile '${profileName}' found.`);
+
+    return;
+  }
+
+  if (selectedProfile.mfaEnabled) {
+    return;
+  }
+
+  const profileAnswers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'accessKey',
+      message: 'Access key',
+      default: selectedProfile.awsAccessKeyId
+    },
+    {
+      type: 'input',
+      name: 'secretKey',
+      message: 'Secret key',
+      default: selectedProfile.awsSecretAccessKey
+    },
+    {
+      type: 'input',
+      name: 'defaultRegion',
+      message: 'Default region',
+      default: selectedProfile.awsDefaultRegion
+    },
+    {
+      type: 'input',
+      name: 'mfaArn',
+      message: 'MFA device ARN'
+    },
+    {
+      type: 'number',
+      name: 'mfaExpiry',
+      message: 'MFA token expiry (seconds)',
+      default: 3600
+    }
+  ]);
+
+  addNewProfile({
+    profileName: profileName,
+    awsAccessKeyId: profileAnswers.accessKey,
+    awsSecretAccessKey: profileAnswers.secretKey,
+    awsDefaultRegion: profileAnswers.defaultRegion,
+    mfaEnabled: true,
+    mfaDeviceArn: profileAnswers.mfaArn,
+    sessionLengthInSeconds: profileAnswers.mfaExpiry
+  });
+
+  console.log(`Enabled MFA on profile '${profileName}'`);
 };
 
 yargs
@@ -313,6 +399,22 @@ yargs
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
       await removeProfile(args.profile);
+    }
+  })
+  .command({
+    command: 'enable-mfa [profile]',
+    describe: 'Enable MFA on an existing profile',
+    builder: (
+      yargs
+    ): Argv<{
+      profile?: string;
+    }> =>
+      yargs.positional('profile', {
+        type: 'string',
+        describe: 'The name of the profile to enable MFA'
+      }),
+    handler: async (args: { profile?: string }): Promise<void> => {
+      await enableMfa(args.profile);
     }
   })
   .help().argv;
