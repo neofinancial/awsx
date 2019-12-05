@@ -1,4 +1,4 @@
-import AWS, { STS, AWSError } from 'aws-sdk';
+import { config, Credentials, STS, AWSError } from 'aws-sdk';
 import { GetSessionTokenRequest } from 'aws-sdk/clients/sts';
 
 export interface ProfileConfiguration {
@@ -21,13 +21,13 @@ export interface AWSCredentials {
   awsSessionToken: string;
 }
 
-const createStsClient = (configuration: ProfileConfiguration): AWS.STS => {
-  AWS.config.credentials = new AWS.Credentials(
+const createStsClient = (configuration: ProfileConfiguration): STS => {
+  config.credentials = new Credentials(
     configuration.awsAccessKeyId,
     configuration.awsSecretAccessKey
   );
 
-  return new AWS.STS();
+  return new STS();
 };
 
 const createStsParameters = (

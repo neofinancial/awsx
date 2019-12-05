@@ -18,9 +18,9 @@
   "scripts": {
     "start": "ts-node src/app.ts",
     "start:bin": "node bin/awsx.js",
-    "build": "tsc && ncc build build/app.js -o dist",
-    "watch": "tsc -w",
-    "clean": "rimraf build dist",
+    "build": "ncc build src/app.ts -o build --minify",
+    "watch": "ncc build src/app.ts -o build --minify --watch",
+    "clean": "rimraf build",
     "lint": "eslint \"**/*.{ts,js}\"",
     "format": "prettier --write \"**/*.{ts,js,json,yaml,yml,md}\"",
     "format:check": "prettier --debug-check \"**/*.{ts,js,json,yaml,yml,md}\""
