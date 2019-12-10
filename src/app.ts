@@ -254,6 +254,8 @@ const enableMfa = async (name?: string): Promise<void> => {
   }
 
   if (selectedProfile.mfaEnabled) {
+    console.log(`Profile ${profileName} already has MFA enabled.`);
+
     return;
   }
 
@@ -331,6 +333,8 @@ const disableMfa = async (name?: string): Promise<void> => {
   }
 
   if (!selectedProfile.mfaEnabled) {
+    console.log(`Profile ${profileName} already has MFA disabled.`)
+
     return;
   }
 
