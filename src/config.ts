@@ -44,6 +44,25 @@ const addNewProfile = (profile: ProfileConfiguration): void => {
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
 
+const deleteProfile = (profileName: string): void => {
+  const awsxConfig = getConfig(AWSX_PROFILE_PATH);
+  delete awsxConfig[profileName];
+  writeConfig(AWSX_PROFILE_PATH, awsxConfig);
+
+  const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+  delete awsCredentials[profileName];
+  writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
+};
+
+const isMfaSessionStillValid = (
+  lastLoginTimeInSeconds: number,
+  sessionLengthInSeconds: number
+): boolean => {
+  return (
+    lastLoginTimeInSeconds + (sessionLengthInSeconds - 30) > Math.floor(new Date().getTime() / 1000)
+  );
+};
+
 const getProfiles = (): ProfileConfiguration[] => {
   const awsxConfig = getConfig(AWSX_PROFILE_PATH);
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
@@ -52,7 +71,20 @@ const getProfiles = (): ProfileConfiguration[] => {
 
   for (const profile in awsCredentials) {
     if (awsxConfig[profile] && awsxConfig[profile].mfaEnabled) {
-      profiles.push(awsxConfig[profile]);
+      profiles.push({
+        profileName: awsxConfig[profile].profileName,
+        awsAccessKeyId: awsxConfig[profile].awsAccessKeyId,
+        awsSecretAccessKey: awsxConfig[profile].awsSecretAccessKey,
+        awsDefaultRegion: awsxConfig[profile].awsDefaultRegion,
+        mfaEnabled: true,
+        mfaDeviceArn: awsxConfig[profile].mfaDeviceArn,
+        lastLoginTimeInSeconds: Number(awsxConfig[profile].lastLoginTimeInSeconds),
+        sessionLengthInSeconds: Number(awsxConfig[profile].sessionLengthInSeconds),
+        mfaSessionValid: isMfaSessionStillValid(
+          Number(awsxConfig[profile].lastLoginTimeInSeconds),
+          Number(awsxConfig[profile].sessionLengthInSeconds)
+        )
+      });
     } else {
       profiles.push({
         profileName: profile,
@@ -80,7 +112,6 @@ const writeTemporaryCredentials = (
   credentials: AWSCredentials
 ): void => {
   if (profile.mfaEnabled) {
-
     // record login time
     const awsxProfiles = getConfig(AWSX_PROFILE_PATH);
     awsxProfiles[profile.profileName].lastLoginTimeInSeconds = Math.floor(
@@ -121,6 +152,7 @@ const getCredentials = (profileName: string): AWSCredentials | null => {
 export {
   writeTemporaryCredentials,
   addNewProfile,
+  deleteProfile,
   initConfig,
   getProfile,
   getProfileNames,
