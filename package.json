@@ -3,13 +3,13 @@
   "description": "AWS CLI profile switcher with MFA support",
   "version": "1.0.0",
   "author": "Neo Financial Engineering <engineering@neofinancial.com>",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/neofinancial/awsx"
   },
   "engines": {
-    "node": "^10.0.0"
+    "node": ">=10.0.0"
   },
   "bin": {
     "_awsx_prompt": "./bin/awsx.js",
@@ -17,17 +17,18 @@
   },
   "scripts": {
     "start": "ts-node src/app.ts",
-    "start:bin": "node bin/awsx.js",
+    "start:build": "node bin/awsx.js",
     "build": "ncc build src/app.ts -o build --minify",
     "watch": "ncc build src/app.ts -o build --minify --watch",
     "clean": "rimraf build",
     "lint": "eslint \"**/*.{ts,js}\"",
     "format": "prettier --write \"**/*.{ts,js,json,yaml,yml,md}\"",
-    "format:check": "prettier --debug-check \"**/*.{ts,js,json,yaml,yml,md}\""
+    "format:check": "prettier --debug-check \"**/*.{ts,js,json,yaml,yml,md}\"",
+    "prepublishOnly": "rimraf build && ncc build src/app.ts -o build --minify"
   },
   "files": [
     "bin",
-    "dist"
+    "build"
   ],
   "husky": {
     "hooks": {
@@ -45,25 +46,25 @@
     ]
   },
   "dependencies": {
-    "aws-sdk": "^2.584.0",
+    "aws-sdk": "^2.595.0",
     "chalk": "^3.0.0",
     "ini": "^1.3.5",
-    "inquirer": "^7.0.0",
+    "inquirer": "^7.0.1",
     "yargs": "^15.0.2"
   },
   "devDependencies": {
     "@types/ini": "^1.3.30",
     "@types/inquirer": "^6.5.0",
-    "@types/node": "^12.12.14",
-    "@types/yargs": "^13.0.3",
+    "@types/node": "^13.1.0",
+    "@types/yargs": "^13.0.4",
     "@zeit/ncc": "^0.20.5",
-    "eslint": "^6.7.2",
+    "eslint": "^6.8.0",
     "eslint-config-neo": "^0.5.1",
     "husky": "^3.1.0",
     "lint-staged": "^9.5.0",
     "prettier": "^1.19.1",
     "rimraf": "^3.0.0",
     "ts-node": "^8.5.4",
-    "typescript": "^3.7.3"
+    "typescript": "^3.7.4"
   }
 }

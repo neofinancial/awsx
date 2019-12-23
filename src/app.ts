@@ -43,6 +43,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
   }
 
   const selectedProfile = getProfile(currentProfile);
+
   if (!selectedProfile) {
     console.error(
       `No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`

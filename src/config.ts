@@ -5,6 +5,7 @@ import ini from 'ini';
 import { ProfileConfiguration, AWSCredentials } from './mfa-login';
 
 export const AWSX_HOME = `${process.env.HOME}/.awsx`;
+
 const AWS_HOME = `${process.env.HOME}/.aws`;
 
 const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
@@ -32,11 +33,13 @@ const writeConfig = (filePath: string, object: any): void => {
 const addNewProfile = (profile: ProfileConfiguration): void => {
   if (profile.mfaEnabled) {
     const awsxConfig = getConfig(AWSX_PROFILE_PATH);
+
     awsxConfig[profile.profileName] = profile;
     writeConfig(AWSX_PROFILE_PATH, awsxConfig);
   }
 
   const awsConfig = getConfig(AWS_CONFIG_PATH);
+
   awsConfig[profile.profileName] = {
     region: profile.awsDefaultRegion,
     output: profile.awsOutputFormat
@@ -45,6 +48,7 @@ const addNewProfile = (profile: ProfileConfiguration): void => {
   writeConfig(AWS_CONFIG_PATH, awsConfig);
 
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+
   awsCredentials[profile.profileName] = {
     aws_access_key_id: profile.awsAccessKeyId,
     aws_secret_access_key: profile.awsSecretAccessKey
@@ -55,14 +59,17 @@ const addNewProfile = (profile: ProfileConfiguration): void => {
 
 const deleteProfile = (profileName: string): void => {
   const awsxConfig = getConfig(AWSX_PROFILE_PATH);
+
   delete awsxConfig[profileName];
   writeConfig(AWSX_PROFILE_PATH, awsxConfig);
 
   const awsConfig = getConfig(AWS_CONFIG_PATH);
+
   delete awsConfig[profileName];
   writeConfig(AWS_CREDENTIALS_PATH, awsConfig);
 
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+
   delete awsCredentials[profileName];
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
@@ -130,6 +137,7 @@ const writeTemporaryCredentials = (
   if (profile.mfaEnabled) {
     // record login time
     const awsxProfiles = getConfig(AWSX_PROFILE_PATH);
+
     awsxProfiles[profile.profileName].lastLoginTimeInSeconds = Math.floor(
       new Date().getTime() / 1000
     );
