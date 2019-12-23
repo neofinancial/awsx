@@ -15,7 +15,17 @@ import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from '.
 import exportEnvironmentVariables from './exporter';
 
 const profiles = getProfileNames();
-let currentProfile = '';
+let currentProfile = process.env.AWS_PROFILE || '';
+
+const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
+  if (mfaExpiry < 0) {
+    return 'mfaExpiry must be greater than 0';
+  } else if (mfaExpiry > 129600) {
+    return 'mfaExpiry must be less than or equal to 129600';
+  } else {
+    return true;
+  }
+};
 
 const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
   if (profiles.length === 0) {
@@ -25,7 +35,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
   }
 
   if (name) {
-    console.log('switched to profile', name);
+    console.log('Switched to profile', name);
     currentProfile = name;
   } else {
     const answers = await inquirer.prompt([
@@ -43,6 +53,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
   }
 
   const selectedProfile = getProfile(currentProfile);
+
   if (!selectedProfile) {
     console.error(
       `No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`
@@ -183,7 +194,8 @@ const addProfile = async (
           type: 'number',
           name: 'mfaExpiry',
           message: 'MFA token expiry (seconds)',
-          default: 3600
+          default: 3600,
+          validate: validateMfaExpiry
         }
       ]);
 
@@ -304,7 +316,8 @@ const enableMfa = async (name?: string): Promise<void> => {
       type: 'number',
       name: 'mfaExpiry',
       message: 'MFA token expiry (seconds)',
-      default: 3600
+      default: 3600,
+      validate: validateMfaExpiry
     }
   ]);
 
