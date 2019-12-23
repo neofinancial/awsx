@@ -9,6 +9,7 @@ const AWS_HOME = `${process.env.HOME}/.aws`;
 
 const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
 const AWS_CREDENTIALS_PATH = `${AWS_HOME}/credentials`;
+const AWS_CONFIG_PATH = `${AWS_HOME}/config`;
 
 const initConfig = (): void => {
   if (!fs.existsSync(AWSX_HOME)) {
@@ -35,6 +36,14 @@ const addNewProfile = (profile: ProfileConfiguration): void => {
     writeConfig(AWSX_PROFILE_PATH, awsxConfig);
   }
 
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+  awsConfig[profile.profileName] = {
+    region: profile.awsDefaultRegion,
+    output: profile.awsOutputFormat
+  };
+
+  writeConfig(AWS_CONFIG_PATH, awsConfig);
+
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
   awsCredentials[profile.profileName] = {
     aws_access_key_id: profile.awsAccessKeyId,
@@ -48,6 +57,10 @@ const deleteProfile = (profileName: string): void => {
   const awsxConfig = getConfig(AWSX_PROFILE_PATH);
   delete awsxConfig[profileName];
   writeConfig(AWSX_PROFILE_PATH, awsxConfig);
+
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+  delete awsConfig[profileName];
+  writeConfig(AWS_CREDENTIALS_PATH, awsConfig);
 
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
   delete awsCredentials[profileName];
@@ -66,6 +79,7 @@ const isMfaSessionStillValid = (
 const getProfiles = (): ProfileConfiguration[] => {
   const awsxConfig = getConfig(AWSX_PROFILE_PATH);
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
 
   const profiles = [];
 
@@ -75,7 +89,8 @@ const getProfiles = (): ProfileConfiguration[] => {
         profileName: awsxConfig[profile].profileName,
         awsAccessKeyId: awsxConfig[profile].awsAccessKeyId,
         awsSecretAccessKey: awsxConfig[profile].awsSecretAccessKey,
-        awsDefaultRegion: awsxConfig[profile].awsDefaultRegion,
+        awsDefaultRegion: awsConfig[profile] ? awsConfig[profile].region : null,
+        awsOutputFormat: awsConfig[profile] ? awsConfig[profile].output : null,
         mfaEnabled: true,
         mfaDeviceArn: awsxConfig[profile].mfaDeviceArn,
         lastLoginTimeInSeconds: Number(awsxConfig[profile].lastLoginTimeInSeconds),
@@ -90,7 +105,8 @@ const getProfiles = (): ProfileConfiguration[] => {
         profileName: profile,
         awsAccessKeyId: awsCredentials[profile].aws_access_key_id,
         awsSecretAccessKey: awsCredentials[profile].aws_secret_access_key,
-        awsDefaultRegion: awsCredentials[profile].aws_default_region,
+        awsDefaultRegion: awsConfig[profile] ? awsConfig[profile].region : null,
+        awsOutputFormat: awsConfig[profile] ? awsConfig[profile].output : null,
         mfaEnabled: false
       });
     }
@@ -126,8 +142,7 @@ const writeTemporaryCredentials = (
     awsCredentials[profile.profileName] = {
       aws_access_key_id: credentials.awsAccessKeyId,
       aws_secret_access_key: credentials.awsSecretAccessKey,
-      aws_session_token: credentials.awsSessionToken,
-      aws_default_region: profile.awsDefaultRegion
+      aws_session_token: credentials.awsSessionToken
     };
 
     writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);

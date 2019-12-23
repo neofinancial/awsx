@@ -60,6 +60,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
         lastCredentials.awsAccessKeyId,
         lastCredentials.awsSecretAccessKey,
         selectedProfile.awsDefaultRegion,
+        selectedProfile.awsOutputFormat,
         lastCredentials.awsSessionToken
       );
 
@@ -85,6 +86,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
           credentials.awsAccessKeyId,
           credentials.awsSecretAccessKey,
           selectedProfile.awsDefaultRegion,
+          selectedProfile.awsOutputFormat,
           credentials.awsSessionToken
         );
       }
@@ -94,7 +96,8 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       selectedProfile.profileName,
       selectedProfile.awsAccessKeyId,
       selectedProfile.awsSecretAccessKey,
-      selectedProfile.awsDefaultRegion
+      selectedProfile.awsDefaultRegion,
+      selectedProfile.awsOutputFormat
     );
   }
 };
@@ -104,15 +107,17 @@ const addProfile = async (
   accessKey?: string,
   secretKey?: string,
   defaultRegion?: string,
+  outputFormat?: string,
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
-  if (name && accessKey && secretKey && defaultRegion) {
+  if (name && accessKey && secretKey && defaultRegion && outputFormat) {
     const profile: ProfileConfiguration = {
       profileName: name,
       awsAccessKeyId: accessKey,
       awsSecretAccessKey: secretKey,
       awsDefaultRegion: defaultRegion,
+      awsOutputFormat: outputFormat,
       mfaEnabled: false
     };
 
@@ -147,6 +152,11 @@ const addProfile = async (
         message: 'Default region'
       },
       {
+        type: 'input',
+        name: 'outputFormat',
+        message: 'Output format'
+      },
+      {
         type: 'confirm',
         name: 'useMfa',
         message: 'Use MFA'
@@ -158,6 +168,7 @@ const addProfile = async (
       awsAccessKeyId: profileAnswers.accessKey,
       awsSecretAccessKey: profileAnswers.secretKey,
       awsDefaultRegion: profileAnswers.defaultRegion,
+      awsOutputFormat: profileAnswers.outputFormat,
       mfaEnabled: profileAnswers.useMfa
     };
 
@@ -280,6 +291,12 @@ const enableMfa = async (name?: string): Promise<void> => {
     },
     {
       type: 'input',
+      name: 'outputFormat',
+      message: 'Output format',
+      default: selectedProfile.awsOutputFormat
+    },
+    {
+      type: 'input',
       name: 'mfaArn',
       message: 'MFA device ARN'
     },
@@ -297,6 +314,7 @@ const enableMfa = async (name?: string): Promise<void> => {
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
     awsDefaultRegion: profileAnswers.defaultRegion,
+    awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: true,
     mfaDeviceArn: profileAnswers.mfaArn,
     sessionLengthInSeconds: profileAnswers.mfaExpiry
@@ -333,7 +351,7 @@ const disableMfa = async (name?: string): Promise<void> => {
   }
 
   if (!selectedProfile.mfaEnabled) {
-    console.log(`Profile ${profileName} already has MFA disabled.`)
+    console.log(`Profile ${profileName} already has MFA disabled.`);
 
     return;
   }
@@ -356,6 +374,12 @@ const disableMfa = async (name?: string): Promise<void> => {
       name: 'defaultRegion',
       message: 'Default region',
       default: selectedProfile.awsDefaultRegion
+    },
+    {
+      type: 'input',
+      name: 'outputFormat',
+      message: 'Output format',
+      default: selectedProfile.awsOutputFormat
     }
   ]);
 
@@ -365,6 +389,7 @@ const disableMfa = async (name?: string): Promise<void> => {
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
     awsDefaultRegion: profileAnswers.defaultRegion,
+    awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: false
   });
 
@@ -396,7 +421,7 @@ yargs
   })
   .command({
     command:
-      'add-profile [profile] [access-key] [secret-key] [default-region] [mfa-arn] [mfa-expiry]',
+      'add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
     describe: 'Add profile',
     builder: (
       yargs
@@ -405,6 +430,7 @@ yargs
       'access-key'?: string;
       'secret-key'?: string;
       'default-region'?: string;
+      'output-format'?: string;
       'mfa-arn'?: string;
       'mfa-expiry'?: number;
     }> =>
@@ -425,6 +451,10 @@ yargs
           type: 'string',
           describe: 'The default AWS region for the new profile'
         })
+        .positional('output-format', {
+          type: 'string',
+          describe: 'The default AWS CLI output format for the new profile'
+        })
         .positional('mfa-arn', {
           type: 'string',
           describe: 'The ARN of the MFA device for the new profile'
@@ -440,6 +470,7 @@ yargs
       accessKey?: string;
       secretKey?: string;
       defaultRegion?: string;
+      outputFormat?: string;
       mfaArn?: string;
       mfaExpiry?: number;
     }): Promise<void> => {
@@ -449,6 +480,7 @@ yargs
         args.accessKey,
         args.secretKey,
         args.defaultRegion,
+        args.outputFormat,
         args.mfaArn,
         args.mfaExpiry
       );
