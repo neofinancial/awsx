@@ -1,5 +1,8 @@
 # awsx
 
+[![Build status](https://github.com/neofinancial/awsx/workflows/CI/badge.svg)](https://github.com/neofinancial/awsx/actions)
+![TypeScript 3.7.2](https://img.shields.io/badge/TypeScript-3.7.4-brightgreen.svg)
+
 AWS CLI profile switcher with MFA support.
 
 ## Usage
@@ -72,3 +75,7 @@ To clean the build directory run `yarn clean`
 1. Run `npm pack --dry-run` to see what will be published
 1. Run `npm publish`
 1. Create a release on GitHub. Use the version as the tag and release name. For example for version `1.0.0` the tag and release name would be `v1.0.0`.
+
+## Credits
+
+This project was inspired by [awsp](https://github.com/johnnyopao/awsp)

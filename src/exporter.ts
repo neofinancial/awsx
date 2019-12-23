@@ -20,6 +20,8 @@ const exportEnvironmentVariables = (
 
   if (sessionToken) {
     exportScript += ` AWS_SESSION_TOKEN=${sessionToken}`;
+  } else {
+    exportScript += ` AWS_SESSION_TOKEN=""`;
   }
 
   if (outputFormat) {

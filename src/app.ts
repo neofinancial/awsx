@@ -15,7 +15,7 @@ import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from '.
 import exportEnvironmentVariables from './exporter';
 
 const profiles = getProfileNames();
-let currentProfile = '';
+let currentProfile = process.env.AWS_PROFILE || '';
 
 const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
   if (profiles.length === 0) {
@@ -25,7 +25,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
   }
 
   if (name) {
-    console.log('switched to profile', name);
+    console.log('Switched to profile', name);
     currentProfile = name;
   } else {
     const answers = await inquirer.prompt([
