@@ -66,7 +66,7 @@ const deleteProfile = (profileName: string): void => {
   const awsConfig = getConfig(AWS_CONFIG_PATH);
 
   delete awsConfig[profileName];
-  writeConfig(AWS_CREDENTIALS_PATH, awsConfig);
+  writeConfig(AWS_CONFIG_PATH, awsConfig);
 
   const awsCredentials = getConfig(AWS_CREDENTIALS_PATH);
 
