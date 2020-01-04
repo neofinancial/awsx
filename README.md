@@ -27,7 +27,7 @@ Reload your profile by launching a new shell or running `source ~/.bash_profile`
 
 ### Switching profiles
 
-#### `awsx`
+#### `awsx` or `awsx [profile]`
 
 ### Adding a new profile
 
