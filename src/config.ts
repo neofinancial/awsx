@@ -7,6 +7,7 @@ import { ProfileConfiguration, AWSCredentials } from './mfa-login';
 export const AWSX_HOME = `${process.env.HOME}/.awsx`;
 
 const AWS_HOME = `${process.env.HOME}/.aws`;
+
 const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
 const AWS_CREDENTIALS_PATH = `${AWS_HOME}/credentials`;
 const AWS_CONFIG_PATH = `${AWS_HOME}/config`;

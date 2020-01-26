@@ -497,16 +497,20 @@ yargs
       mfaArn?: string;
       mfaExpiry?: number;
     }): Promise<void> => {
-      initConfig();
-      await addProfile(
-        args.profile,
-        args.accessKey,
-        args.secretKey,
-        args.defaultRegion,
-        args.outputFormat,
-        args.mfaArn,
-        args.mfaExpiry
-      );
+      try {
+        initConfig();
+        await addProfile(
+          args.profile,
+          args.accessKey,
+          args.secretKey,
+          args.defaultRegion,
+          args.outputFormat,
+          args.mfaArn,
+          args.mfaExpiry
+        );
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   })
   .command({
@@ -522,7 +526,11 @@ yargs
         describe: 'The name of the profile to delete'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
-      await removeProfile(args.profile);
+      try {
+        await removeProfile(args.profile);
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   })
   .command({
@@ -538,7 +546,11 @@ yargs
         describe: 'The name of the profile to enable MFA'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
-      await enableMfa(args.profile);
+      try {
+        await enableMfa(args.profile);
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   })
   .command({
@@ -554,16 +566,24 @@ yargs
         describe: 'The name of the profile to disable MFA'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
-      await disableMfa(args.profile);
+      try {
+        await disableMfa(args.profile);
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   })
   .command({
     command: 'backup-config',
     describe: 'Create a backup of your AWS and AWSX config files',
     handler: (): void => {
-      backupConfig();
+      try {
+        backupConfig();
 
-      console.log('Backed up all AWS CLI and AWSX config files');
+        console.log('Backed up all AWS CLI and AWSX config files');
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   })
   .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
