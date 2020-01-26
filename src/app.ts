@@ -2,12 +2,13 @@ import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
 import {
+  backupConfig,
   initConfig,
-  addNewProfile,
   getProfileNames,
   getProfile,
-  writeTemporaryCredentials,
   getCredentials,
+  writeTemporaryCredentials,
+  createProfile,
   deleteProfile
 } from './config';
 
@@ -137,7 +138,7 @@ const addProfile = async (
       profile.sessionLengthInSeconds = mfaExpiry;
     }
 
-    addNewProfile(profile);
+    createProfile(profile);
     console.log(`Added new profile '${name}'`);
   } else {
     const profileAnswers = await inquirer.prompt([
@@ -204,7 +205,7 @@ const addProfile = async (
       profile.sessionLengthInSeconds = mfaAnswers.mfaExpiry;
     }
 
-    addNewProfile(profile);
+    createProfile(profile);
     console.log(`Added new profile '${profile.profileName}'`);
   }
 };
@@ -324,7 +325,7 @@ const enableMfa = async (name?: string): Promise<void> => {
   ]);
 
   deleteProfile(profileName);
-  addNewProfile({
+  createProfile({
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
@@ -399,7 +400,7 @@ const disableMfa = async (name?: string): Promise<void> => {
   ]);
 
   deleteProfile(profileName);
-  addNewProfile({
+  createProfile({
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
@@ -547,6 +548,13 @@ yargs
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
       await disableMfa(args.profile);
+    }
+  })
+  .command({
+    command: 'backup-config',
+    describe: 'Create a backup of your AWS and AWSX config files',
+    handler: (): void => {
+      backupConfig();
     }
   })
   .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
