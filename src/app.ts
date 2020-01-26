@@ -35,7 +35,6 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
   }
 
   if (name) {
-    console.log('Switched to profile', name);
     currentProfile = name;
   } else {
     const answers = await inquirer.prompt([
@@ -75,6 +74,8 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
         lastCredentials.awsSessionToken
       );
 
+      console.log('Switched to profile', selectedProfile.profileName);
+
       return;
     }
 
@@ -86,7 +87,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       }
     ]);
 
-    getTemporaryCredentials(
+    await getTemporaryCredentials(
       selectedProfile,
       mfaAnswer.token,
       (credentials: AWSCredentials): void => {
@@ -111,6 +112,8 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       selectedProfile.awsOutputFormat
     );
   }
+
+  console.log('Switched to profile', selectedProfile.profileName);
 };
 
 const addProfile = async (
@@ -428,8 +431,12 @@ yargs
           default: false
         }),
     handler: async (args: { profile?: string; forceMfa?: boolean }): Promise<void> => {
-      initConfig();
-      await switchProfile(args.profile, args.forceMfa);
+      try {
+        initConfig();
+        await switchProfile(args.profile, args.forceMfa);
+      } catch (error) {
+        console.error(error.message);
+      }
     }
   })
   .command({

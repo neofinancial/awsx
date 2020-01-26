@@ -7,14 +7,30 @@ import { ProfileConfiguration, AWSCredentials } from './mfa-login';
 export const AWSX_HOME = `${process.env.HOME}/.awsx`;
 
 const AWS_HOME = `${process.env.HOME}/.aws`;
-
 const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
+const AWSX_BACKUP_PATH = `${AWSX_HOME}/backup`;
 const AWS_CREDENTIALS_PATH = `${AWS_HOME}/credentials`;
 const AWS_CONFIG_PATH = `${AWS_HOME}/config`;
+const AWSX_CREDENTIALS_BACKUP_PATH = `${AWSX_BACKUP_PATH}/credentials`;
+const AWSX_CONFIG_BACKUP_PATH = `${AWSX_BACKUP_PATH}/config`;
 
 const initConfig = (): void => {
+  if (!fs.existsSync(AWS_HOME)) {
+    fs.mkdirSync(AWS_HOME);
+  }
+
   if (!fs.existsSync(AWSX_HOME)) {
     fs.mkdirSync(AWSX_HOME);
+    fs.mkdirSync(AWSX_BACKUP_PATH);
+
+    //first time run, back up their aws credentials and config
+    if (fs.existsSync(AWS_CREDENTIALS_PATH)) {
+      fs.copyFileSync(AWS_CREDENTIALS_PATH, AWSX_CREDENTIALS_BACKUP_PATH);
+    }
+
+    if (fs.existsSync(AWS_CONFIG_PATH)) {
+      fs.copyFileSync(AWS_CONFIG_PATH, AWSX_CONFIG_BACKUP_PATH);
+    }
   }
 };
 
