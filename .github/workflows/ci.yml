@@ -25,7 +25,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
       - name: Install
-        run: yarn --prefer-offline --pure-lockfile --no-progress --non-interactive
+        run: yarn --prefer-offline --frozen-lockfile --no-progress --non-interactive
       - name: Lint
         run: yarn lint
       - name: Build

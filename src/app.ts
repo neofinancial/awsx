@@ -2,12 +2,13 @@ import inquirer from 'inquirer';
 import yargs, { Argv } from 'yargs';
 
 import {
+  backupConfig,
   initConfig,
-  addNewProfile,
   getProfileNames,
   getProfile,
-  writeTemporaryCredentials,
   getCredentials,
+  writeTemporaryCredentials,
+  createProfile,
   deleteProfile
 } from './config';
 
@@ -47,7 +48,6 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       }
     ]);
 
-    // eslint-disable-next-line require-atomic-updates
     currentProfile = answers.profile;
   }
 
@@ -141,7 +141,7 @@ const addProfile = async (
       profile.sessionLengthInSeconds = mfaExpiry;
     }
 
-    addNewProfile(profile);
+    createProfile(profile);
     console.log(`Added new profile '${name}'`);
   } else {
     const profileAnswers = await inquirer.prompt([
@@ -166,9 +166,11 @@ const addProfile = async (
         message: 'Default region'
       },
       {
-        type: 'input',
+        type: 'list',
         name: 'outputFormat',
-        message: 'Output format'
+        message: 'Output format',
+        choices: ['json', 'yaml', 'text', 'table'],
+        default: 'json'
       },
       {
         type: 'confirm',
@@ -206,7 +208,7 @@ const addProfile = async (
       profile.sessionLengthInSeconds = mfaAnswers.mfaExpiry;
     }
 
-    addNewProfile(profile);
+    createProfile(profile);
     console.log(`Added new profile '${profile.profileName}'`);
   }
 };
@@ -305,10 +307,11 @@ const enableMfa = async (name?: string): Promise<void> => {
       default: selectedProfile.awsDefaultRegion
     },
     {
-      type: 'input',
+      type: 'list',
       name: 'outputFormat',
       message: 'Output format',
-      default: selectedProfile.awsOutputFormat
+      choices: ['json', 'yaml', 'text', 'table'],
+      default: selectedProfile.awsOutputFormat || 'json'
     },
     {
       type: 'input',
@@ -325,7 +328,7 @@ const enableMfa = async (name?: string): Promise<void> => {
   ]);
 
   deleteProfile(profileName);
-  addNewProfile({
+  createProfile({
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
@@ -400,7 +403,7 @@ const disableMfa = async (name?: string): Promise<void> => {
   ]);
 
   deleteProfile(profileName);
-  addNewProfile({
+  createProfile({
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
@@ -418,7 +421,7 @@ yargs
   .command({
     command: '$0 [profile]',
     describe: 'Switch profiles',
-    builder: (yargs): Argv<{ profile?: string; f?: boolean }> =>
+    builder: (yargs): Argv<{ profile?: string; forceMfa?: boolean }> =>
       yargs
         .positional('profile', {
           describe: 'The name of the profile to switch to',
@@ -426,7 +429,7 @@ yargs
         })
         .option('force-mfa', {
           alias: 'f',
-          describe: 'If the selected profile has MFA enabled, forces a new MFA session',
+          describe: 'If the selected profile has MFA enabled, forces a new MFA login',
           type: 'boolean',
           default: false
         }),
@@ -554,4 +557,14 @@ yargs
       await disableMfa(args.profile);
     }
   })
+  .command({
+    command: 'backup-config',
+    describe: 'Create a backup of your AWS and AWSX config files',
+    handler: (): void => {
+      backupConfig();
+
+      console.log('Backed up all AWS CLI and AWSX config files');
+    }
+  })
+  .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
   .help().argv;
