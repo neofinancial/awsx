@@ -555,6 +555,8 @@ yargs
     describe: 'Create a backup of your AWS and AWSX config files',
     handler: (): void => {
       backupConfig();
+
+      console.log('Backed up all AWS CLI and AWSX config files');
     }
   })
   .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
