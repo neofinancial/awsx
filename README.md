@@ -1,9 +1,10 @@
 # awsx
 
 [![Build status](https://github.com/neofinancial/awsx/workflows/CI/badge.svg)](https://github.com/neofinancial/awsx/actions)
-![TypeScript 3.7.2](https://img.shields.io/badge/TypeScript-3.7.4-brightgreen.svg)
+[![codecov](https://codecov.io/gh/neofinancial/awsx/branch/master/graph/badge.svg)](https://codecov.io/gh/neofinancial/awsx)
+![TypeScript 3.7.5](https://img.shields.io/badge/TypeScript-3.7.5-brightgreen.svg)
 
-AWS CLI profile switcher with MFA support.
+AWS CLI profile switcher with MFA support
 
 ## Usage
 
@@ -29,11 +30,19 @@ Reload your profile by launching a new shell or running `source ~/.bash_profile`
 
 #### `awsx` or `awsx [profile]`
 
+If you don't specify a profile name you will be prompted to choose from one of your existing profiles. If the selected profile has MFA enabled and you want to force a new MFA login use the `--force-mfa` flag.
+
 ### Adding a new profile
 
 #### `awsx add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]`
 
 > NOTE: If you don't provide inputs you will be prompted for them.
+
+#### Finding your MFA ARN
+
+You can find your MFA ARN by logging into the AWS Console, clicking on your name in the menu and then clicking on "My Security Credentials". Under the "Multi-factor authentication (MFA)" section there should be an "Assigned MFA device" heading. The string below that that starts with `arn:aws:iam::` is your MFA ARN.
+
+If you don't have MFA set up on your AWS account you can enable it by following [these instructions](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_enable_virtual.html).
 
 ### Adding MFA support to an existing profile
 
@@ -48,6 +57,8 @@ Reload your profile by launching a new shell or running `source ~/.bash_profile`
 #### `awsx remove-profile [profile]`
 
 ## Contributing
+
+If you'd like to contribute to awsx we recommend that you first [open an issue](https://github.com/neofinancial/awsx/issues) to discuss your proposed change.
 
 1. Fork this repo
 1. Clone the forked repo
