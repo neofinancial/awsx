@@ -31,7 +31,7 @@ const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
 
 const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
   if (profiles.length === 0) {
-    console.error(chalk.red(`No profiles are configured, run 'awsx add-profile' first.`));
+    console.warn(chalk.yellow(`No profiles are configured, run 'awsx add-profile' first.`));
 
     return;
   }
@@ -75,7 +75,9 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
         lastCredentials.awsSessionToken
       );
 
-      console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
+      if (name) {
+        console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
+      }
 
       return;
     }
@@ -114,7 +116,9 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
     );
   }
 
-  console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
+  if (name) {
+    console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
+  }
 };
 
 const addProfile = async (
@@ -283,7 +287,7 @@ const enableMfa = async (name?: string): Promise<void> => {
   }
 
   if (selectedProfile.mfaEnabled) {
-    console.log(chalk.green(`Profile ${profileName} already has MFA enabled.`));
+    console.warn(chalk.yellow(`Profile ${profileName} already has MFA enabled.`));
 
     return;
   }
@@ -371,7 +375,7 @@ const disableMfa = async (name?: string): Promise<void> => {
   }
 
   if (!selectedProfile.mfaEnabled) {
-    console.log(chalk.green(`Profile ${profileName} already has MFA disabled.`));
+    console.warn(chalk.yellow(`Profile ${profileName} already has MFA disabled.`));
 
     return;
   }
