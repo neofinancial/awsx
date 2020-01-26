@@ -48,7 +48,6 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       }
     ]);
 
-    // eslint-disable-next-line require-atomic-updates
     currentProfile = answers.profile;
   }
 
@@ -163,9 +162,11 @@ const addProfile = async (
         message: 'Default region'
       },
       {
-        type: 'input',
+        type: 'list',
         name: 'outputFormat',
-        message: 'Output format'
+        message: 'Output format',
+        choices: ['json', 'yaml', 'text', 'table'],
+        default: 'json'
       },
       {
         type: 'confirm',
@@ -302,10 +303,11 @@ const enableMfa = async (name?: string): Promise<void> => {
       default: selectedProfile.awsDefaultRegion
     },
     {
-      type: 'input',
+      type: 'list',
       name: 'outputFormat',
       message: 'Output format',
-      default: selectedProfile.awsOutputFormat
+      choices: ['json', 'yaml', 'text', 'table'],
+      default: selectedProfile.awsOutputFormat || 'json'
     },
     {
       type: 'input',
@@ -415,7 +417,7 @@ yargs
   .command({
     command: '$0 [profile]',
     describe: 'Switch profiles',
-    builder: (yargs): Argv<{ profile?: string; f?: boolean }> =>
+    builder: (yargs): Argv<{ profile?: string; forceMfa?: boolean }> =>
       yargs
         .positional('profile', {
           describe: 'The name of the profile to switch to',
@@ -423,7 +425,7 @@ yargs
         })
         .option('force-mfa', {
           alias: 'f',
-          describe: 'If the selected profile has MFA enabled, forces a new MFA session',
+          describe: 'If the selected profile has MFA enabled, forces a new MFA login',
           type: 'boolean',
           default: false
         }),
@@ -547,4 +549,5 @@ yargs
       await disableMfa(args.profile);
     }
   })
+  .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
   .help().argv;
