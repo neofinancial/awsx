@@ -26,6 +26,16 @@ alias awsx="source _awsx"
 
 Reload your profile by launching a new shell or running `source ~/.bash_profile`.
 
+### Upgrading
+
+```sh
+// npm
+npm install -g awsx
+
+// yarn
+yarn global upgrade awsx --latest
+```
+
 ### Switching profiles
 
 #### `awsx` or `awsx [profile]`
