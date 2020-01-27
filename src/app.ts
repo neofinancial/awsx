@@ -12,7 +12,6 @@ import {
   createProfile,
   deleteProfile
 } from './config';
-
 import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
 import exportEnvironmentVariables from './exporter';
 
@@ -20,7 +19,7 @@ const profiles = getProfileNames();
 let currentProfile = process.env.AWS_PROFILE || '';
 
 const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
-  if (mfaExpiry < 0) {
+  if (mfaExpiry <= 0) {
     return 'mfaExpiry must be greater than 0';
   } else if (mfaExpiry > 129600) {
     return 'mfaExpiry must be less than or equal to 129600';
@@ -420,176 +419,185 @@ const disableMfa = async (name?: string): Promise<void> => {
   console.log(chalk.green(`Disabled MFA on profile '${profileName}'`));
 };
 
-yargs
-  .scriptName('awsx')
-  .usage('$0 [command]')
-  .command({
-    command: '$0 [profile]',
-    describe: 'Switch profiles',
-    builder: (yargs): Argv<{ profile?: string; forceMfa?: boolean }> =>
-      yargs
-        .positional('profile', {
-          describe: 'The name of the profile to switch to',
-          type: 'string'
-        })
-        .option('force-mfa', {
-          alias: 'f',
-          describe: 'If the selected profile has MFA enabled, forces a new MFA login',
-          type: 'boolean',
-          default: false
+const awsx = (): void => {
+  yargs
+    .scriptName('awsx')
+    .usage('$0 [command]')
+    .command({
+      command: '$0 [profile]',
+      describe: 'Switch profiles',
+      builder: (yargs): Argv<{ profile?: string; forceMfa?: boolean }> =>
+        yargs
+          .positional('profile', {
+            describe: 'The name of the profile to switch to',
+            type: 'string'
+          })
+          .option('force-mfa', {
+            alias: 'f',
+            describe: 'If the selected profile has MFA enabled, forces a new MFA login',
+            type: 'boolean',
+            default: false
+          }),
+      handler: async (args: { profile?: string; forceMfa?: boolean }): Promise<void> => {
+        try {
+          initConfig();
+          await switchProfile(args.profile, args.forceMfa);
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
+      }
+    })
+    .command({
+      command:
+        'add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
+      describe: 'Add profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+        'access-key'?: string;
+        'secret-key'?: string;
+        'default-region'?: string;
+        'output-format'?: string;
+        'mfa-arn'?: string;
+        'mfa-expiry'?: number;
+      }> =>
+        yargs
+          .positional('profile', {
+            type: 'string',
+            describe: 'The name of the profile to create'
+          })
+          .positional('access-key', {
+            type: 'string',
+            describe: 'The access key for the new profile'
+          })
+          .positional('secret-key', {
+            type: 'string',
+            describe: 'The secret key for the new profile'
+          })
+          .positional('default-region', {
+            type: 'string',
+            describe: 'The default AWS region for the new profile'
+          })
+          .positional('output-format', {
+            type: 'string',
+            describe: 'The default AWS CLI output format for the new profile'
+          })
+          .positional('mfa-arn', {
+            type: 'string',
+            describe: 'The ARN of the MFA device for the new profile'
+          })
+          .positional('mfa-expiry', {
+            type: 'number',
+            describe: 'MFA session token duration in seconds (between 900 and 129600)',
+            default: 3600
+          })
+          .implies('profile', ['access-key', 'secret-key']),
+      handler: async (args: {
+        profile?: string;
+        accessKey?: string;
+        secretKey?: string;
+        defaultRegion?: string;
+        outputFormat?: string;
+        mfaArn?: string;
+        mfaExpiry?: number;
+      }): Promise<void> => {
+        try {
+          initConfig();
+          await addProfile(
+            args.profile,
+            args.accessKey,
+            args.secretKey,
+            args.defaultRegion,
+            args.outputFormat,
+            args.mfaArn,
+            args.mfaExpiry
+          );
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
+      }
+    })
+    .command({
+      command: 'remove-profile [profile]',
+      describe: 'Remove profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs.positional('profile', {
+          type: 'string',
+          describe: 'The name of the profile to delete'
         }),
-    handler: async (args: { profile?: string; forceMfa?: boolean }): Promise<void> => {
-      try {
-        initConfig();
-        await switchProfile(args.profile, args.forceMfa);
-      } catch (error) {
-        console.error(chalk.red(error.message));
+      handler: async (args: { profile?: string }): Promise<void> => {
+        try {
+          await removeProfile(args.profile);
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
       }
-    }
-  })
-  .command({
-    command:
-      'add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
-    describe: 'Add profile',
-    builder: (
-      yargs
-    ): Argv<{
-      profile?: string;
-      'access-key'?: string;
-      'secret-key'?: string;
-      'default-region'?: string;
-      'output-format'?: string;
-      'mfa-arn'?: string;
-      'mfa-expiry'?: number;
-    }> =>
-      yargs
-        .positional('profile', {
+    })
+    .command({
+      command: 'enable-mfa [profile]',
+      describe: 'Enable MFA on an existing profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs.positional('profile', {
           type: 'string',
-          describe: 'The name of the profile to create'
-        })
-        .positional('access-key', {
-          type: 'string',
-          describe: 'The access key for the new profile'
-        })
-        .positional('secret-key', {
-          type: 'string',
-          describe: 'The secret key for the new profile'
-        })
-        .positional('default-region', {
-          type: 'string',
-          describe: 'The default AWS region for the new profile'
-        })
-        .positional('output-format', {
-          type: 'string',
-          describe: 'The default AWS CLI output format for the new profile'
-        })
-        .positional('mfa-arn', {
-          type: 'string',
-          describe: 'The ARN of the MFA device for the new profile'
-        })
-        .positional('mfa-expiry', {
-          type: 'number',
-          describe: 'MFA session token duration in seconds (between 900 and 129600)',
-          default: 3600
-        })
-        .implies('profile', ['access-key', 'secret-key']),
-    handler: async (args: {
-      profile?: string;
-      accessKey?: string;
-      secretKey?: string;
-      defaultRegion?: string;
-      outputFormat?: string;
-      mfaArn?: string;
-      mfaExpiry?: number;
-    }): Promise<void> => {
-      try {
-        initConfig();
-        await addProfile(
-          args.profile,
-          args.accessKey,
-          args.secretKey,
-          args.defaultRegion,
-          args.outputFormat,
-          args.mfaArn,
-          args.mfaExpiry
-        );
-      } catch (error) {
-        console.error(chalk.red(error.message));
+          describe: 'The name of the profile to enable MFA'
+        }),
+      handler: async (args: { profile?: string }): Promise<void> => {
+        try {
+          await enableMfa(args.profile);
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
       }
-    }
-  })
-  .command({
-    command: 'remove-profile [profile]',
-    describe: 'Remove profile',
-    builder: (
-      yargs
-    ): Argv<{
-      profile?: string;
-    }> =>
-      yargs.positional('profile', {
-        type: 'string',
-        describe: 'The name of the profile to delete'
-      }),
-    handler: async (args: { profile?: string }): Promise<void> => {
-      try {
-        await removeProfile(args.profile);
-      } catch (error) {
-        console.error(chalk.red(error.message));
+    })
+    .command({
+      command: 'disable-mfa [profile]',
+      describe: 'Disable MFA on an existing profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs.positional('profile', {
+          type: 'string',
+          describe: 'The name of the profile to disable MFA'
+        }),
+      handler: async (args: { profile?: string }): Promise<void> => {
+        try {
+          await disableMfa(args.profile);
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
       }
-    }
-  })
-  .command({
-    command: 'enable-mfa [profile]',
-    describe: 'Enable MFA on an existing profile',
-    builder: (
-      yargs
-    ): Argv<{
-      profile?: string;
-    }> =>
-      yargs.positional('profile', {
-        type: 'string',
-        describe: 'The name of the profile to enable MFA'
-      }),
-    handler: async (args: { profile?: string }): Promise<void> => {
-      try {
-        await enableMfa(args.profile);
-      } catch (error) {
-        console.error(chalk.red(error.message));
-      }
-    }
-  })
-  .command({
-    command: 'disable-mfa [profile]',
-    describe: 'Disable MFA on an existing profile',
-    builder: (
-      yargs
-    ): Argv<{
-      profile?: string;
-    }> =>
-      yargs.positional('profile', {
-        type: 'string',
-        describe: 'The name of the profile to disable MFA'
-      }),
-    handler: async (args: { profile?: string }): Promise<void> => {
-      try {
-        await disableMfa(args.profile);
-      } catch (error) {
-        console.error(chalk.red(error.message));
-      }
-    }
-  })
-  .command({
-    command: 'backup-config',
-    describe: 'Create a backup of your AWS and awsx config files',
-    handler: (): void => {
-      try {
-        backupConfig();
+    })
+    .command({
+      command: 'backup-config',
+      describe: 'Create a backup of your AWS and awsx config files',
+      handler: (): void => {
+        try {
+          backupConfig();
 
-        console.log(chalk.green('Backed up all AWS CLI and awsx config files'));
-      } catch (error) {
-        console.error(chalk.red(error.message));
+          console.log(chalk.green('Backed up all AWS CLI and awsx config files'));
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
       }
-    }
-  })
-  .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
-  .help().argv;
+    })
+    .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
+    .help().argv;
+};
+
+if (process.env.NODE_ENV === 'development') {
+  awsx();
+}
+
+export default awsx;
+export { validateMfaExpiry };
