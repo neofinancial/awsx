@@ -27,6 +27,10 @@ const backupConfig = (): void => {
 };
 
 const initConfig = (): void => {
+  if (!fs.existsSync(AWS_HOME)) {
+    fs.mkdirSync(AWS_HOME);
+  }
+
   if (!fs.existsSync(AWSX_HOME)) {
     fs.mkdirSync(AWSX_HOME);
 

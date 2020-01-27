@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
 
 import {
@@ -30,13 +31,12 @@ const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
 
 const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
   if (profiles.length === 0) {
-    console.error(`No profiles are configured, run 'awsx add-profile' first.`);
+    console.warn(chalk.yellow(`No profiles are configured, run 'awsx add-profile' first.`));
 
     return;
   }
 
   if (name) {
-    console.log('Switched to profile', name);
     currentProfile = name;
   } else {
     const answers = await inquirer.prompt([
@@ -56,7 +56,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
 
   if (!selectedProfile) {
     console.error(
-      `No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`
+      chalk.red(`No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`)
     );
 
     return;
@@ -75,6 +75,10 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
         lastCredentials.awsSessionToken
       );
 
+      if (name) {
+        console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
+      }
+
       return;
     }
 
@@ -86,7 +90,7 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       }
     ]);
 
-    getTemporaryCredentials(
+    await getTemporaryCredentials(
       selectedProfile,
       mfaAnswer.token,
       (credentials: AWSCredentials): void => {
@@ -110,6 +114,10 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       selectedProfile.awsDefaultRegion,
       selectedProfile.awsOutputFormat
     );
+  }
+
+  if (name) {
+    console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
   }
 };
 
@@ -139,7 +147,7 @@ const addProfile = async (
     }
 
     createProfile(profile);
-    console.log(`Added new profile '${name}'`);
+    console.log(chalk.green(`Added new profile '${name}'`));
   } else {
     const profileAnswers = await inquirer.prompt([
       {
@@ -206,7 +214,7 @@ const addProfile = async (
     }
 
     createProfile(profile);
-    console.log(`Added new profile '${profile.profileName}'`);
+    console.log(chalk.green(`Added new profile '${profile.profileName}'`));
   }
 };
 
@@ -232,7 +240,7 @@ const removeProfile = async (name?: string): Promise<void> => {
   const selectedProfile = getProfile(profileName);
 
   if (!selectedProfile) {
-    console.error(`No profile '${profileName}' found.`);
+    console.error(chalk.red(`No profile '${profileName}' found.`));
 
     return;
   }
@@ -247,7 +255,7 @@ const removeProfile = async (name?: string): Promise<void> => {
 
   if (profileName && confirmAnswer.confirm) {
     deleteProfile(profileName);
-    console.log(`Removed profile '${profileName}'`);
+    console.log(chalk.green(`Removed profile '${profileName}'`));
   }
 };
 
@@ -273,13 +281,13 @@ const enableMfa = async (name?: string): Promise<void> => {
   const selectedProfile = getProfile(profileName);
 
   if (!selectedProfile) {
-    console.error(`No profile '${profileName}' found.`);
+    console.error(chalk.red(`No profile '${profileName}' found.`));
 
     return;
   }
 
   if (selectedProfile.mfaEnabled) {
-    console.log(`Profile ${profileName} already has MFA enabled.`);
+    console.warn(chalk.yellow(`Profile ${profileName} already has MFA enabled.`));
 
     return;
   }
@@ -336,7 +344,7 @@ const enableMfa = async (name?: string): Promise<void> => {
     sessionLengthInSeconds: profileAnswers.mfaExpiry
   });
 
-  console.log(`Enabled MFA on profile '${profileName}'`);
+  console.log(chalk.green(`Enabled MFA on profile '${profileName}'`));
 };
 
 const disableMfa = async (name?: string): Promise<void> => {
@@ -361,13 +369,13 @@ const disableMfa = async (name?: string): Promise<void> => {
   const selectedProfile = getProfile(profileName);
 
   if (!selectedProfile) {
-    console.error(`No profile '${profileName}' found.`);
+    console.error(chalk.red(`No profile '${profileName}' found.`));
 
     return;
   }
 
   if (!selectedProfile.mfaEnabled) {
-    console.log(`Profile ${profileName} already has MFA disabled.`);
+    console.warn(chalk.yellow(`Profile ${profileName} already has MFA disabled.`));
 
     return;
   }
@@ -409,7 +417,7 @@ const disableMfa = async (name?: string): Promise<void> => {
     mfaEnabled: false
   });
 
-  console.log(`Disabled MFA on profile '${profileName}'`);
+  console.log(chalk.green(`Disabled MFA on profile '${profileName}'`));
 };
 
 yargs
@@ -431,8 +439,12 @@ yargs
           default: false
         }),
     handler: async (args: { profile?: string; forceMfa?: boolean }): Promise<void> => {
-      initConfig();
-      await switchProfile(args.profile, args.forceMfa);
+      try {
+        initConfig();
+        await switchProfile(args.profile, args.forceMfa);
+      } catch (error) {
+        console.error(chalk.red(error.message));
+      }
     }
   })
   .command({
@@ -490,16 +502,20 @@ yargs
       mfaArn?: string;
       mfaExpiry?: number;
     }): Promise<void> => {
-      initConfig();
-      await addProfile(
-        args.profile,
-        args.accessKey,
-        args.secretKey,
-        args.defaultRegion,
-        args.outputFormat,
-        args.mfaArn,
-        args.mfaExpiry
-      );
+      try {
+        initConfig();
+        await addProfile(
+          args.profile,
+          args.accessKey,
+          args.secretKey,
+          args.defaultRegion,
+          args.outputFormat,
+          args.mfaArn,
+          args.mfaExpiry
+        );
+      } catch (error) {
+        console.error(chalk.red(error.message));
+      }
     }
   })
   .command({
@@ -515,7 +531,11 @@ yargs
         describe: 'The name of the profile to delete'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
-      await removeProfile(args.profile);
+      try {
+        await removeProfile(args.profile);
+      } catch (error) {
+        console.error(chalk.red(error.message));
+      }
     }
   })
   .command({
@@ -531,7 +551,11 @@ yargs
         describe: 'The name of the profile to enable MFA'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
-      await enableMfa(args.profile);
+      try {
+        await enableMfa(args.profile);
+      } catch (error) {
+        console.error(chalk.red(error.message));
+      }
     }
   })
   .command({
@@ -547,16 +571,24 @@ yargs
         describe: 'The name of the profile to disable MFA'
       }),
     handler: async (args: { profile?: string }): Promise<void> => {
-      await disableMfa(args.profile);
+      try {
+        await disableMfa(args.profile);
+      } catch (error) {
+        console.error(chalk.red(error.message));
+      }
     }
   })
   .command({
     command: 'backup-config',
-    describe: 'Create a backup of your AWS and AWSX config files',
+    describe: 'Create a backup of your AWS and awsx config files',
     handler: (): void => {
-      backupConfig();
+      try {
+        backupConfig();
 
-      console.log('Backed up all AWS CLI and AWSX config files');
+        console.log(chalk.green('Backed up all AWS CLI and awsx config files'));
+      } catch (error) {
+        console.error(chalk.red(error.message));
+      }
     }
   })
   .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)

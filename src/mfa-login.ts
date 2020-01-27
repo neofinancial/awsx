@@ -1,4 +1,4 @@
-import { config, Credentials, STS, AWSError } from 'aws-sdk';
+import { config, Credentials, STS } from 'aws-sdk';
 import { GetSessionTokenRequest } from 'aws-sdk/clients/sts';
 
 export interface ProfileConfiguration {
@@ -49,29 +49,24 @@ const createTemporaryCredentials = (
     profileName: profileName,
     awsAccessKeyId: credentials.AccessKeyId,
     awsSecretAccessKey: credentials.SecretAccessKey,
-    awsSessionToken: credentials.SessionToken,
+    awsSessionToken: credentials.SessionToken
   };
 };
 
-const getTemporaryCredentials = (
+const getTemporaryCredentials = async (
   configuration: ProfileConfiguration,
   mfaToken: string,
   onLogin: (credentials: AWSCredentials) => void
-): void => {
+): Promise<void> => {
   const stsParameters = createStsParameters(configuration, mfaToken);
 
-  createStsClient(configuration).getSessionToken(
-    stsParameters,
-    (err: AWSError, data: STS.Types.GetSessionTokenResponse): void => {
-      if (err) {
-        throw err;
-      }
+  const response = await createStsClient(configuration)
+    .getSessionToken(stsParameters)
+    .promise();
 
-      if (data && data.Credentials) {
-        onLogin(createTemporaryCredentials(configuration.profileName, data.Credentials));
-      }
-    }
-  );
+  if (response.Credentials) {
+    onLogin(createTemporaryCredentials(configuration.profileName, response.Credentials));
+  }
 };
 
 export default getTemporaryCredentials;
