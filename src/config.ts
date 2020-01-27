@@ -195,6 +195,7 @@ const deleteProfile = (profileName: string): void => {
 export {
   backupConfig,
   initConfig,
+  isMfaSessionStillValid,
   getProfileNames,
   getProfile,
   getCredentials,

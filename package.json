@@ -16,10 +16,11 @@
     "_awsx": "./bin/run.sh"
   },
   "scripts": {
-    "start": "ts-node src/app.ts",
+    "start": "NODE_ENV=development ts-node src/app.ts",
     "start:build": "node bin/awsx.js",
-    "build": "ncc build src/app.ts -o build --minify",
-    "watch": "ncc build src/app.ts -o build --minify --watch",
+    "build": "NODE_ENV=production ncc build src/app.ts -o build --minify",
+    "watch": "NODE_ENV=production ncc build src/app.ts -o build --minify --watch",
+    "test": "NODE_ENV=test jest",
     "clean": "rimraf build",
     "lint": "eslint \"**/*.{ts,js}\"",
     "format": "prettier --write \"**/*.{ts,js,json,yaml,yml,md}\"",
@@ -53,15 +54,18 @@
   "devDependencies": {
     "@types/ini": "1.3.30",
     "@types/inquirer": "6.5.0",
+    "@types/jest": "^24.9.1",
     "@types/node": "13.5.0",
     "@types/yargs": "15.0.1",
     "@zeit/ncc": "0.21.0",
     "eslint": "6.8.0",
     "eslint-config-neo": "0.5.2",
     "husky": "4.2.1",
+    "jest": "^25.1.0",
     "lint-staged": "10.0.2",
     "prettier": "1.19.1",
     "rimraf": "3.0.0",
+    "ts-jest": "^25.0.0",
     "ts-node": "8.6.2",
     "typescript": "3.7.5"
   }

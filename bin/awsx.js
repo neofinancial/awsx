@@ -1,3 +1,5 @@
 #!/usr/bin/env node
 
-require('../build');
+const awsx = require('../build').default;
+
+awsx();

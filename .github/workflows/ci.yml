@@ -30,3 +30,9 @@ jobs:
         run: yarn lint
       - name: Build
         run: yarn build
+      - name: Test
+        run: yarn test --coverage
+      - name: Upload coverage
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
