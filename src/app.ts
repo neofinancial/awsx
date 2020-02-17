@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
+import updateNotifier from 'update-notifier';
 
 import {
   backupConfig,
@@ -14,6 +15,9 @@ import {
 } from './config';
 import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
 import exportEnvironmentVariables from './exporter';
+import pkg from '../package.json';
+
+updateNotifier({ pkg }).notify();
 
 const profiles = getProfileNames();
 let currentProfile = process.env.AWS_PROFILE || '';
