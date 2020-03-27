@@ -2,7 +2,7 @@
 import fs from 'fs';
 import ini from 'ini';
 
-import { ProfileConfiguration, AWSCredentials } from './mfa-login';
+import { ProfileConfiguration, AWSCredentials, AssumeRoleProfileConfiguration } from './mfa-login';
 
 export const AWSX_HOME = `${process.env.HOME}/.awsx`;
 
@@ -92,6 +92,30 @@ const getProfiles = (): ProfileConfiguration[] => {
   }
 
   return profiles;
+};
+
+const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfiguration[] => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  const profiles: AssumeRoleProfileConfiguration[] = [];
+
+  for (const profile in awsConfig) {
+    if (awsConfig[profile] && awsConfig[profile].role_arn) {
+      profiles.push({
+        profileName: profile,
+        parentProfileName: awsConfig[profile].source_profile,
+        roleArn: awsConfig[profile].role_arn,
+        defaultRegion: awsConfig[profile].region,
+        outputFormat: awsConfig[profile].output
+      });
+    }
+  }
+
+  if (parentProfile) {
+    return profiles.filter(profile => profile.parentProfileName === parentProfile);
+  } else {
+    return profiles;
+  }
 };
 
 const getProfileNames = (): string[] => {
@@ -192,14 +216,29 @@ const deleteProfile = (profileName: string): void => {
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
 
+const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  awsConfig[`profile ${profile.profileName}`] = {
+    role_arn: profile.roleArn,
+    source_profile: profile.parentProfileName,
+    region: profile.defaultRegion,
+    output: profile.outputFormat
+  };
+
+  writeConfig(AWS_CONFIG_PATH, awsConfig);
+};
+
 export {
   backupConfig,
   initConfig,
   isMfaSessionStillValid,
   getProfileNames,
   getProfile,
+  getAssumeRoleProfiles,
   getCredentials,
   writeTemporaryCredentials,
   createProfile,
-  deleteProfile
+  deleteProfile,
+  createAssumeRoleProfile
 };

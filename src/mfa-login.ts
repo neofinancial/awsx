@@ -14,6 +14,14 @@ export interface ProfileConfiguration {
   mfaSessionValid?: boolean;
 }
 
+export interface AssumeRoleProfileConfiguration {
+  profileName: string;
+  parentProfileName: string;
+  roleArn: string;
+  defaultRegion: string;
+  outputFormat: string;
+}
+
 export interface AWSCredentials {
   profileName: string;
   awsAccessKeyId: string;

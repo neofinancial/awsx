@@ -11,9 +11,15 @@ import {
   getCredentials,
   writeTemporaryCredentials,
   createProfile,
-  deleteProfile
+  deleteProfile,
+  createAssumeRoleProfile,
+  getAssumeRoleProfiles
 } from './config';
-import getTemporaryCredentials, { ProfileConfiguration, AWSCredentials } from './mfa-login';
+import getTemporaryCredentials, {
+  ProfileConfiguration,
+  AWSCredentials,
+  AssumeRoleProfileConfiguration
+} from './mfa-login';
 import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
 
@@ -29,6 +35,28 @@ const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
     return 'mfaExpiry must be less than or equal to 129600';
   } else {
     return true;
+  }
+};
+
+const switchToAssumeRoleProfile = async (parentProfileName: string): Promise<void> => {
+  const assumeRoleProfiles = getAssumeRoleProfiles(parentProfileName).map(profile =>
+    profile.profileName.replace('profile ', '')
+  );
+
+  if (assumeRoleProfiles.length > 0) {
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'profile',
+        message: 'Choose an assume role profile',
+        choices: ['Remain on root profile', ...assumeRoleProfiles],
+        default: currentProfile || assumeRoleProfiles[0]
+      }
+    ]);
+
+    if (answers.profile !== 'Remain on root profile') {
+      exportEnvironmentVariables(answers.profile);
+    }
   }
 };
 
@@ -69,14 +97,9 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
     const lastCredentials = getCredentials(selectedProfile.profileName);
 
     if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
-      exportEnvironmentVariables(
-        selectedProfile.profileName,
-        lastCredentials.awsAccessKeyId,
-        lastCredentials.awsSecretAccessKey,
-        selectedProfile.awsDefaultRegion,
-        selectedProfile.awsOutputFormat,
-        lastCredentials.awsSessionToken
-      );
+      exportEnvironmentVariables(selectedProfile.profileName);
+
+      await switchToAssumeRoleProfile(selectedProfile.profileName);
 
       if (name) {
         console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
@@ -99,25 +122,14 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
       (credentials: AWSCredentials): void => {
         writeTemporaryCredentials(selectedProfile, credentials);
 
-        exportEnvironmentVariables(
-          selectedProfile.profileName,
-          credentials.awsAccessKeyId,
-          credentials.awsSecretAccessKey,
-          selectedProfile.awsDefaultRegion,
-          selectedProfile.awsOutputFormat,
-          credentials.awsSessionToken
-        );
+        exportEnvironmentVariables(selectedProfile.profileName);
       }
     );
   } else {
-    exportEnvironmentVariables(
-      selectedProfile.profileName,
-      selectedProfile.awsAccessKeyId,
-      selectedProfile.awsSecretAccessKey,
-      selectedProfile.awsDefaultRegion,
-      selectedProfile.awsOutputFormat
-    );
+    exportEnvironmentVariables(selectedProfile.profileName);
   }
+
+  await switchToAssumeRoleProfile(selectedProfile.profileName);
 
   if (name) {
     console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
@@ -259,6 +271,66 @@ const removeProfile = async (name?: string): Promise<void> => {
   if (profileName && confirmAnswer.confirm) {
     deleteProfile(profileName);
     console.log(chalk.green(`Removed profile '${profileName}'`));
+  }
+};
+
+const addAssumeRoleProfile = async (
+  name?: string,
+  parentProfile?: string,
+  roleArn?: string,
+  defaultRegion?: string,
+  outputFormat?: string
+): Promise<void> => {
+  if (name && parentProfile && roleArn && defaultRegion && outputFormat) {
+    const assumeRoleProfile: AssumeRoleProfileConfiguration = {
+      profileName: name,
+      parentProfileName: parentProfile,
+      roleArn,
+      defaultRegion,
+      outputFormat
+    };
+
+    createAssumeRoleProfile(assumeRoleProfile);
+  } else {
+    const profileAnswers = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'profile',
+        message: 'Name'
+      },
+      {
+        type: 'input',
+        name: 'parentProfile',
+        message: 'Parent Profile Name'
+      },
+      {
+        type: 'input',
+        name: 'roleArn',
+        message: 'Role ARN'
+      },
+      {
+        type: 'input',
+        name: 'defaultRegion',
+        message: 'Default region'
+      },
+      {
+        type: 'list',
+        name: 'outputFormat',
+        message: 'Output format',
+        choices: ['json', 'yaml', 'text', 'table'],
+        default: 'json'
+      }
+    ]);
+
+    const profile: AssumeRoleProfileConfiguration = {
+      profileName: profileAnswers.profile,
+      parentProfileName: profileAnswers.parentProfile,
+      roleArn: profileAnswers.roleArn,
+      defaultRegion: profileAnswers.defaultRegion,
+      outputFormat: profileAnswers.outputFormat
+    };
+
+    createAssumeRoleProfile(profile);
   }
 };
 
@@ -516,6 +588,62 @@ const awsx = (): void => {
             args.outputFormat,
             args.mfaArn,
             args.mfaExpiry
+          );
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
+      }
+    })
+    .command({
+      command:
+        'add-assume-role-profile [profile] [parent-profile] [role-arn] [default-region] [output-format]',
+      describe: 'Add assume role profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+        'parent-profile'?: string;
+        'role-arn'?: string;
+        'default-region'?: string;
+        'output-format'?: string;
+      }> =>
+        yargs
+          .positional('profile', {
+            type: 'string',
+            describe: 'The name of the profile to create'
+          })
+          .positional('parent-profile', {
+            type: 'string',
+            describe: 'The name of the parent profile'
+          })
+          .positional('role-arn', {
+            type: 'string',
+            describe: 'The arn of the role to assume'
+          })
+          .positional('default-region', {
+            type: 'string',
+            describe: 'The default AWS region for the new profile'
+          })
+          .positional('output-format', {
+            type: 'string',
+            describe: 'The default AWS CLI output format for the new profile'
+          })
+          .implies('profile', ['parent-profile', 'role-arn', 'default-region', 'output-format']),
+      handler: async (args: {
+        profile?: string;
+        parentProfile?: string;
+        roleArn?: string;
+        defaultRegion?: string;
+        outputFormat?: string;
+      }): Promise<void> => {
+        try {
+          initConfig();
+          await addAssumeRoleProfile(
+            args.profile,
+            args.parentProfile,
+            args.roleArn,
+            args.defaultRegion,
+            args.outputFormat
           );
         } catch (error) {
           console.error(chalk.red(error.message));
