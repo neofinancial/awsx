@@ -580,7 +580,7 @@ const awsx = (): void => {
     .scriptName('awsx')
     .usage('$0 [command]')
     .command({
-      command: '$0 [profile] [assumeRoleProfile]',
+      command: '$0 [profile] [assume-role-profile]',
       describe: 'Switch profiles',
       builder: (
         yargs
@@ -590,7 +590,7 @@ const awsx = (): void => {
             describe: 'The name of the profile to switch to',
             type: 'string'
           })
-          .positional('assumeRoleProfile', {
+          .positional('assume-role-profile', {
             describe: 'The name of the assumed role profile to switch to',
             type: 'string'
           })
@@ -685,6 +685,26 @@ const awsx = (): void => {
       }
     })
     .command({
+      command: 'remove-profile [profile]',
+      describe: 'Remove profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs.positional('profile', {
+          type: 'string',
+          describe: 'The name of the profile to delete'
+        }),
+      handler: async (args: { profile?: string }): Promise<void> => {
+        try {
+          await removeProfile(args.profile);
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
+      }
+    })
+    .command({
       command:
         'add-assume-role-profile [profile] [parent-profile] [role-arn] [default-region] [output-format]',
       describe: 'Add assume role profile',
@@ -735,26 +755,6 @@ const awsx = (): void => {
             args.defaultRegion,
             args.outputFormat
           );
-        } catch (error) {
-          console.error(chalk.red(error.message));
-        }
-      }
-    })
-    .command({
-      command: 'remove-profile [profile]',
-      describe: 'Remove profile',
-      builder: (
-        yargs
-      ): Argv<{
-        profile?: string;
-      }> =>
-        yargs.positional('profile', {
-          type: 'string',
-          describe: 'The name of the profile to delete'
-        }),
-      handler: async (args: { profile?: string }): Promise<void> => {
-        try {
-          await removeProfile(args.profile);
         } catch (error) {
           console.error(chalk.red(error.message));
         }
