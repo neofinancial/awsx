@@ -13,7 +13,9 @@ import {
   createProfile,
   deleteProfile,
   createAssumeRoleProfile,
-  getAssumeRoleProfiles
+  getAssumeRoleProfiles,
+  deleteAssumeRoleProfile,
+  getAssumeRoleProfile
 } from './config';
 import getTemporaryCredentials, {
   ProfileConfiguration,
@@ -38,29 +40,48 @@ const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
   }
 };
 
-const switchToAssumeRoleProfile = async (parentProfileName: string): Promise<void> => {
+const switchToAssumeRoleProfile = async (
+  parentProfileName: string,
+  assumeRoleProfileName?: string
+): Promise<string | undefined> => {
   const assumeRoleProfiles = getAssumeRoleProfiles(parentProfileName).map(profile =>
     profile.profileName.replace('profile ', '')
   );
 
-  if (assumeRoleProfiles.length > 0) {
+  if (assumeRoleProfileName) {
+    if (assumeRoleProfiles.includes(assumeRoleProfileName)) {
+      exportEnvironmentVariables(assumeRoleProfileName);
+
+      return assumeRoleProfileName;
+    } else {
+      console.error(chalk.red(`No profile '${assumeRoleProfileName}' found.`));
+    }
+  } else if (assumeRoleProfiles.length > 0) {
+    const rootProfileOption = 'Remain on root profile';
+
     const answers = await inquirer.prompt([
       {
         type: 'list',
         name: 'profile',
         message: 'Choose an assume role profile',
-        choices: ['Remain on root profile', ...assumeRoleProfiles],
+        choices: [rootProfileOption, ...assumeRoleProfiles],
         default: currentProfile || assumeRoleProfiles[0]
       }
     ]);
 
-    if (answers.profile !== 'Remain on root profile') {
+    if (answers.profile !== rootProfileOption) {
       exportEnvironmentVariables(answers.profile);
+
+      return answers.profile;
     }
   }
 };
 
-const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> => {
+const switchProfile = async (
+  name?: string,
+  assumeRoleProfileName?: string,
+  forceMFA?: boolean
+): Promise<void> => {
   if (profiles.length === 0) {
     console.warn(chalk.yellow(`No profiles are configured, run 'awsx add-profile' first.`));
 
@@ -99,10 +120,19 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
     if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
       exportEnvironmentVariables(selectedProfile.profileName);
 
-      await switchToAssumeRoleProfile(selectedProfile.profileName);
+      const activeProfile = await switchToAssumeRoleProfile(
+        selectedProfile.profileName,
+        assumeRoleProfileName
+      );
 
       if (name) {
-        console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
+        console.log(
+          chalk.green(
+            `Switched to profile ${selectedProfile.profileName}${
+              activeProfile ? ` -> ${activeProfile}` : ''
+            }`
+          )
+        );
       }
 
       return;
@@ -129,11 +159,18 @@ const switchProfile = async (name?: string, forceMFA?: boolean): Promise<void> =
     exportEnvironmentVariables(selectedProfile.profileName);
   }
 
-  await switchToAssumeRoleProfile(selectedProfile.profileName);
+  const activeProfile = await switchToAssumeRoleProfile(
+    selectedProfile.profileName,
+    assumeRoleProfileName
+  );
 
-  if (name) {
-    console.log(chalk.green(`Switched to profile ${selectedProfile.profileName}`));
-  }
+  console.log(
+    chalk.green(
+      `Switched to profile ${selectedProfile.profileName}${
+        activeProfile ? ` -> ${activeProfile}` : ''
+      }`
+    )
+  );
 };
 
 const addProfile = async (
@@ -271,6 +308,49 @@ const removeProfile = async (name?: string): Promise<void> => {
   if (profileName && confirmAnswer.confirm) {
     deleteProfile(profileName);
     console.log(chalk.green(`Removed profile '${profileName}'`));
+  }
+};
+
+const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
+  let profileName: string;
+
+  const assumeRoleProfiles = getAssumeRoleProfiles();
+
+  if (name) {
+    profileName = name;
+  } else {
+    const answers = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: assumeRoleProfiles.map(profile => profile.profileName.replace('profile ', '')),
+        default: currentProfile || assumeRoleProfiles[0]
+      }
+    ]);
+
+    profileName = answers.profile;
+  }
+
+  const selectedProfile = getAssumeRoleProfile(profileName);
+
+  if (!selectedProfile) {
+    console.error(chalk.red(`No assumed role profile '${profileName}' found.`));
+
+    return;
+  }
+
+  const confirmAnswer = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'confirm',
+      message: `Are you sure you want to remove assumed role profile '${profileName}'?`
+    }
+  ]);
+
+  if (profileName && confirmAnswer.confirm) {
+    deleteAssumeRoleProfile(profileName);
+    console.log(chalk.green(`Removed assumed role profile '${profileName}'`));
   }
 };
 
@@ -500,12 +580,18 @@ const awsx = (): void => {
     .scriptName('awsx')
     .usage('$0 [command]')
     .command({
-      command: '$0 [profile]',
+      command: '$0 [profile] [assumeRoleProfile]',
       describe: 'Switch profiles',
-      builder: (yargs): Argv<{ profile?: string; forceMfa?: boolean }> =>
+      builder: (
+        yargs
+      ): Argv<{ profile?: string; assumeRoleProfile?: string; forceMfa?: boolean }> =>
         yargs
           .positional('profile', {
             describe: 'The name of the profile to switch to',
+            type: 'string'
+          })
+          .positional('assumeRoleProfile', {
+            describe: 'The name of the assumed role profile to switch to',
             type: 'string'
           })
           .option('force-mfa', {
@@ -514,10 +600,14 @@ const awsx = (): void => {
             type: 'boolean',
             default: false
           }),
-      handler: async (args: { profile?: string; forceMfa?: boolean }): Promise<void> => {
+      handler: async (args: {
+        profile?: string;
+        assumeRoleProfile?: string;
+        forceMfa?: boolean;
+      }): Promise<void> => {
         try {
           initConfig();
-          await switchProfile(args.profile, args.forceMfa);
+          await switchProfile(args.profile, args.assumeRoleProfile, args.forceMfa);
         } catch (error) {
           console.error(chalk.red(error.message));
         }
@@ -665,6 +755,26 @@ const awsx = (): void => {
       handler: async (args: { profile?: string }): Promise<void> => {
         try {
           await removeProfile(args.profile);
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
+      }
+    })
+    .command({
+      command: 'remove-assume-role-profile [profile]',
+      describe: 'Remove assume role profile',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs.positional('profile', {
+          type: 'string',
+          describe: 'The name of the profile to delete'
+        }),
+      handler: async (args: { profile?: string }): Promise<void> => {
+        try {
+          await removeAssumeRoleProfile(args.profile);
         } catch (error) {
           console.error(chalk.red(error.message));
         }

@@ -94,30 +94,6 @@ const getProfiles = (): ProfileConfiguration[] => {
   return profiles;
 };
 
-const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfiguration[] => {
-  const awsConfig = getConfig(AWS_CONFIG_PATH);
-
-  const profiles: AssumeRoleProfileConfiguration[] = [];
-
-  for (const profile in awsConfig) {
-    if (awsConfig[profile] && awsConfig[profile].role_arn) {
-      profiles.push({
-        profileName: profile,
-        parentProfileName: awsConfig[profile].source_profile,
-        roleArn: awsConfig[profile].role_arn,
-        defaultRegion: awsConfig[profile].region,
-        outputFormat: awsConfig[profile].output
-      });
-    }
-  }
-
-  if (parentProfile) {
-    return profiles.filter(profile => profile.parentProfileName === parentProfile);
-  } else {
-    return profiles;
-  }
-};
-
 const getProfileNames = (): string[] => {
   return getProfiles().map(profile => profile.profileName);
 };
@@ -216,6 +192,34 @@ const deleteProfile = (profileName: string): void => {
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
 
+const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfiguration[] => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  const profiles: AssumeRoleProfileConfiguration[] = [];
+
+  for (const profile in awsConfig) {
+    if (awsConfig[profile] && awsConfig[profile].role_arn) {
+      profiles.push({
+        profileName: profile,
+        parentProfileName: awsConfig[profile].source_profile,
+        roleArn: awsConfig[profile].role_arn,
+        defaultRegion: awsConfig[profile].region,
+        outputFormat: awsConfig[profile].output
+      });
+    }
+  }
+
+  if (parentProfile) {
+    return profiles.filter(profile => profile.parentProfileName === parentProfile);
+  } else {
+    return profiles;
+  }
+};
+
+const getAssumeRoleProfile = (profileName: string): AssumeRoleProfileConfiguration | undefined => {
+  return getAssumeRoleProfiles().find(profile => profile.profileName === `profile ${profileName}`);
+};
+
 const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void => {
   const awsConfig = getConfig(AWS_CONFIG_PATH);
 
@@ -229,16 +233,25 @@ const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void 
   writeConfig(AWS_CONFIG_PATH, awsConfig);
 };
 
+const deleteAssumeRoleProfile = (profileName: string): void => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  delete awsConfig[`profile ${profileName}`];
+  writeConfig(AWS_CONFIG_PATH, awsConfig);
+};
+
 export {
   backupConfig,
   initConfig,
   isMfaSessionStillValid,
   getProfileNames,
   getProfile,
-  getAssumeRoleProfiles,
   getCredentials,
   writeTemporaryCredentials,
   createProfile,
   deleteProfile,
-  createAssumeRoleProfile
+  getAssumeRoleProfiles,
+  getAssumeRoleProfile,
+  createAssumeRoleProfile,
+  deleteAssumeRoleProfile
 };
