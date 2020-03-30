@@ -125,15 +125,13 @@ const switchProfile = async (
         assumeRoleProfileName
       );
 
-      if (name) {
-        console.log(
-          chalk.green(
-            `Switched to profile ${selectedProfile.profileName}${
-              activeProfile ? ` -> ${activeProfile}` : ''
-            }`
-          )
-        );
-      }
+      console.log(
+        chalk.green(
+          `Switched to profile ${selectedProfile.profileName}${
+            activeProfile ? ` -> ${activeProfile}` : ''
+          }`
+        )
+      );
 
       return;
     }
