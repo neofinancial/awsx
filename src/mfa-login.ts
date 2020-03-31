@@ -17,9 +17,9 @@ export interface ProfileConfiguration {
 export interface AssumeRoleProfileConfiguration {
   profileName: string;
   parentProfileName: string;
-  roleArn: string;
-  defaultRegion: string;
-  outputFormat: string;
+  awsRoleArn: string;
+  awsDefaultRegion: string;
+  awsOutputFormat: string;
 }
 
 export interface AWSCredentials {

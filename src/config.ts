@@ -202,9 +202,9 @@ const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfigu
       profiles.push({
         profileName: profile,
         parentProfileName: awsConfig[profile].source_profile,
-        roleArn: awsConfig[profile].role_arn,
-        defaultRegion: awsConfig[profile].region,
-        outputFormat: awsConfig[profile].output
+        awsRoleArn: awsConfig[profile].role_arn,
+        awsDefaultRegion: awsConfig[profile].region,
+        awsOutputFormat: awsConfig[profile].output
       });
     }
   }
@@ -224,10 +224,10 @@ const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void 
   const awsConfig = getConfig(AWS_CONFIG_PATH);
 
   awsConfig[`profile ${profile.profileName}`] = {
-    role_arn: profile.roleArn,
+    role_arn: profile.awsRoleArn,
     source_profile: profile.parentProfileName,
-    region: profile.defaultRegion,
-    output: profile.outputFormat
+    region: profile.awsDefaultRegion,
+    output: profile.awsOutputFormat
   };
 
   writeConfig(AWS_CONFIG_PATH, awsConfig);

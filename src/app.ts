@@ -40,7 +40,7 @@ const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
   }
 };
 
-const switchToAssumeRoleProfile = async (
+const switchAssumeRoleProfile = async (
   parentProfileName: string,
   assumeRoleProfileName?: string
 ): Promise<string | undefined> => {
@@ -120,7 +120,7 @@ const switchProfile = async (
     if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
       exportEnvironmentVariables(selectedProfile.profileName);
 
-      const activeProfile = await switchToAssumeRoleProfile(
+      const activeProfile = await switchAssumeRoleProfile(
         selectedProfile.profileName,
         assumeRoleProfileName
       );
@@ -157,7 +157,7 @@ const switchProfile = async (
     exportEnvironmentVariables(selectedProfile.profileName);
   }
 
-  const activeProfile = await switchToAssumeRoleProfile(
+  const activeProfile = await switchAssumeRoleProfile(
     selectedProfile.profileName,
     assumeRoleProfileName
   );
@@ -363,9 +363,9 @@ const addAssumeRoleProfile = async (
     const assumeRoleProfile: AssumeRoleProfileConfiguration = {
       profileName: name,
       parentProfileName: parentProfile,
-      roleArn,
-      defaultRegion,
-      outputFormat
+      awsRoleArn: roleArn,
+      awsDefaultRegion: defaultRegion,
+      awsOutputFormat: outputFormat
     };
 
     createAssumeRoleProfile(assumeRoleProfile);
@@ -377,9 +377,10 @@ const addAssumeRoleProfile = async (
         message: 'Name'
       },
       {
-        type: 'input',
+        type: 'list',
         name: 'parentProfile',
-        message: 'Parent Profile Name'
+        message: 'Choose a parent profile',
+        choices: profiles
       },
       {
         type: 'input',
@@ -403,9 +404,9 @@ const addAssumeRoleProfile = async (
     const profile: AssumeRoleProfileConfiguration = {
       profileName: profileAnswers.profile,
       parentProfileName: profileAnswers.parentProfile,
-      roleArn: profileAnswers.roleArn,
-      defaultRegion: profileAnswers.defaultRegion,
-      outputFormat: profileAnswers.outputFormat
+      awsRoleArn: profileAnswers.roleArn,
+      awsDefaultRegion: profileAnswers.defaultRegion,
+      awsOutputFormat: profileAnswers.outputFormat
     };
 
     createAssumeRoleProfile(profile);
