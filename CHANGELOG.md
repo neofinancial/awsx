@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (March 30, 2020)
+## 1.1.0 (April 2, 2020)
 
 Adding and augmenting commands to enable assumed role adoption
 
