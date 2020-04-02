@@ -355,20 +355,16 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
 const addAssumeRoleProfile = async (
   name?: string,
   parentProfile?: string,
-  roleArn?: string,
-  defaultRegion?: string,
-  outputFormat?: string
+  roleArn?: string
 ): Promise<void> => {
-  if (name && parentProfile && roleArn && defaultRegion && outputFormat) {
-    const assumeRoleProfile: AssumeRoleProfileConfiguration = {
-      profileName: name,
-      parentProfileName: parentProfile,
-      awsRoleArn: roleArn,
-      awsDefaultRegion: defaultRegion,
-      awsOutputFormat: outputFormat
-    };
+  let profileName: string;
+  let parentProfileName: string;
+  let awsRoleArn: string;
 
-    createAssumeRoleProfile(assumeRoleProfile);
+  if (name && parentProfile && roleArn) {
+    profileName = name;
+    parentProfileName = parentProfile;
+    awsRoleArn = roleArn;
   } else {
     const profileAnswers = await inquirer.prompt([
       {
@@ -386,31 +382,56 @@ const addAssumeRoleProfile = async (
         type: 'input',
         name: 'roleArn',
         message: 'Role ARN'
-      },
-      {
-        type: 'input',
-        name: 'defaultRegion',
-        message: 'Default region'
-      },
-      {
-        type: 'list',
-        name: 'outputFormat',
-        message: 'Output format',
-        choices: ['json', 'yaml', 'text', 'table'],
-        default: 'json'
       }
     ]);
 
-    const profile: AssumeRoleProfileConfiguration = {
-      profileName: profileAnswers.profile,
-      parentProfileName: profileAnswers.parentProfile,
-      awsRoleArn: profileAnswers.roleArn,
-      awsDefaultRegion: profileAnswers.defaultRegion,
-      awsOutputFormat: profileAnswers.outputFormat
-    };
-
-    createAssumeRoleProfile(profile);
+    profileName = profileAnswers.profile;
+    parentProfileName = profileAnswers.parentProfile;
+    awsRoleArn = profileAnswers.roleArn;
   }
+
+  const parent = getProfile(parentProfileName);
+
+  if (!parent) {
+    console.error(chalk.red(`No parent profile '${parentProfileName}' found.`));
+
+    return;
+  }
+
+  const existingProfile = getProfile(profileName);
+  const existingAssumeRoleProfile = getAssumeRoleProfile(profileName);
+
+  if (existingProfile || existingAssumeRoleProfile) {
+    console.error(chalk.red(`Profile named '${profileName}' already exists.`));
+
+    return;
+  }
+
+  const configAnswers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'defaultRegion',
+      message: 'Default region',
+      default: parent.awsDefaultRegion
+    },
+    {
+      type: 'list',
+      name: 'outputFormat',
+      message: 'Output format',
+      choices: ['json', 'yaml', 'text', 'table'],
+      default: parent.awsOutputFormat
+    }
+  ]);
+
+  const profile: AssumeRoleProfileConfiguration = {
+    profileName,
+    parentProfileName,
+    awsRoleArn,
+    awsDefaultRegion: configAnswers.defaultRegion,
+    awsOutputFormat: configAnswers.outputFormat
+  };
+
+  createAssumeRoleProfile(profile);
 };
 
 const enableMfa = async (name?: string): Promise<void> => {
@@ -729,31 +750,15 @@ const awsx = (): void => {
             type: 'string',
             describe: 'The arn of the role to assume'
           })
-          .positional('default-region', {
-            type: 'string',
-            describe: 'The default AWS region for the new profile'
-          })
-          .positional('output-format', {
-            type: 'string',
-            describe: 'The default AWS CLI output format for the new profile'
-          })
-          .implies('profile', ['parent-profile', 'role-arn', 'default-region', 'output-format']),
+          .implies('profile', ['parent-profile', 'role-arn']),
       handler: async (args: {
         profile?: string;
         parentProfile?: string;
         roleArn?: string;
-        defaultRegion?: string;
-        outputFormat?: string;
       }): Promise<void> => {
         try {
           initConfig();
-          await addAssumeRoleProfile(
-            args.profile,
-            args.parentProfile,
-            args.roleArn,
-            args.defaultRegion,
-            args.outputFormat
-          );
+          await addAssumeRoleProfile(args.profile, args.parentProfile, args.roleArn);
         } catch (error) {
           console.error(chalk.red(error.message));
         }
