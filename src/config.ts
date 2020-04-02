@@ -197,7 +197,7 @@ const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfigu
 
   const profiles: AssumeRoleProfileConfiguration[] = [];
 
-  for (const profile in awsConfig) {
+  for (const profile of Object.keys(awsConfig)) {
     if (awsConfig[profile] && awsConfig[profile].role_arn) {
       profiles.push({
         profileName: profile,

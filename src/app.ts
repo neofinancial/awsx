@@ -57,7 +57,7 @@ const switchAssumeRoleProfile = async (
       console.error(chalk.red(`No profile '${assumeRoleProfileName}' found.`));
     }
   } else if (assumeRoleProfiles.length > 0) {
-    const rootProfileOption = 'Remain on root profile';
+    const rootProfileOption = 'root profile';
 
     const answers = await inquirer.prompt([
       {
