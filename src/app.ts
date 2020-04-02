@@ -25,8 +25,6 @@ import getTemporaryCredentials, {
 import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
 
-updateNotifier({ pkg }).notify();
-
 const profiles = getProfileNames();
 let currentProfile = process.env.AWS_PROFILE || '';
 
@@ -596,6 +594,8 @@ const disableMfa = async (name?: string): Promise<void> => {
 };
 
 const awsx = (): void => {
+  updateNotifier({ pkg }).notify();
+
   yargs
     .scriptName('awsx')
     .usage('$0 [command]')
