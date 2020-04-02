@@ -38,9 +38,9 @@ yarn global upgrade awsx --latest
 
 ### Switching profiles
 
-#### `awsx` or `awsx [profile]`
+#### `awsx` or `awsx [profile]` or `awsx [profile] [assume-role-profile]`
 
-If you don't specify a profile name you will be prompted to choose from one of your existing profiles. If the selected profile has MFA enabled and you want to force a new MFA login use the `--force-mfa` flag.
+If you don't specify a profile name (or an assume role profile name, if applicable) you will be prompted to choose from one of your existing profiles. If the selected profile has MFA enabled and you want to force a new MFA login use the `--force-mfa` flag.
 
 ### Adding a new profile
 
@@ -65,6 +65,14 @@ If you don't have MFA set up on your AWS account you can enable it by following 
 ### Removing a profile
 
 #### `awsx remove-profile [profile]`
+
+### Adding an assume role profile
+
+#### `awsx add-assume-role-profile [profile] [parent-profile] [role-arn] [default-region] [output-format]`
+
+### Removing an assume role profile
+
+#### `awsx remove-assume-role-profile [profile]`
 
 ## Contributing
 

@@ -2,7 +2,7 @@
 import fs from 'fs';
 import ini from 'ini';
 
-import { ProfileConfiguration, AWSCredentials } from './mfa-login';
+import { ProfileConfiguration, AWSCredentials, AssumeRoleProfileConfiguration } from './mfa-login';
 
 export const AWSX_HOME = `${process.env.HOME}/.awsx`;
 
@@ -192,6 +192,54 @@ const deleteProfile = (profileName: string): void => {
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
 };
 
+const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfiguration[] => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  const profiles: AssumeRoleProfileConfiguration[] = [];
+
+  for (const profile of Object.keys(awsConfig)) {
+    if (awsConfig[profile] && awsConfig[profile].role_arn) {
+      profiles.push({
+        profileName: profile,
+        parentProfileName: awsConfig[profile].source_profile,
+        awsRoleArn: awsConfig[profile].role_arn,
+        awsDefaultRegion: awsConfig[profile].region,
+        awsOutputFormat: awsConfig[profile].output
+      });
+    }
+  }
+
+  if (parentProfile) {
+    return profiles.filter(profile => profile.parentProfileName === parentProfile);
+  } else {
+    return profiles;
+  }
+};
+
+const getAssumeRoleProfile = (profileName: string): AssumeRoleProfileConfiguration | undefined => {
+  return getAssumeRoleProfiles().find(profile => profile.profileName === `profile ${profileName}`);
+};
+
+const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  awsConfig[`profile ${profile.profileName}`] = {
+    role_arn: profile.awsRoleArn,
+    source_profile: profile.parentProfileName,
+    region: profile.awsDefaultRegion,
+    output: profile.awsOutputFormat
+  };
+
+  writeConfig(AWS_CONFIG_PATH, awsConfig);
+};
+
+const deleteAssumeRoleProfile = (profileName: string): void => {
+  const awsConfig = getConfig(AWS_CONFIG_PATH);
+
+  delete awsConfig[`profile ${profileName}`];
+  writeConfig(AWS_CONFIG_PATH, awsConfig);
+};
+
 export {
   backupConfig,
   initConfig,
@@ -201,5 +249,9 @@ export {
   getCredentials,
   writeTemporaryCredentials,
   createProfile,
-  deleteProfile
+  deleteProfile,
+  getAssumeRoleProfiles,
+  getAssumeRoleProfile,
+  createAssumeRoleProfile,
+  deleteAssumeRoleProfile
 };
