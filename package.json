@@ -1,7 +1,7 @@
 {
   "name": "awsx",
   "description": "AWS CLI profile switcher with MFA support",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Neo Financial Engineering <engineering@neofinancial.com>",
   "license": "MIT",
   "repository": {
@@ -18,8 +18,8 @@
   "scripts": {
     "start": "NODE_ENV=development ts-node src/app.ts",
     "start:build": "node bin/awsx.js",
-    "build": "NODE_ENV=production ncc build src/app.ts -o build --minify",
-    "watch": "NODE_ENV=production ncc build src/app.ts -o build --minify --watch",
+    "build": "NODE_ENV=production ncc build src/app.ts -o build --minify --external update-notifier",
+    "watch": "NODE_ENV=production ncc build src/app.ts -o build --watch --external update-notifier",
     "test": "NODE_ENV=test jest",
     "clean": "rimraf build",
     "lint": "eslint \"**/*.{ts,js}\"",
@@ -44,13 +44,15 @@
       "prettier --write"
     ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "update-notifier": "4.1.0"
+  },
   "devDependencies": {
     "@types/ini": "1.3.30",
     "@types/inquirer": "6.5.0",
-    "@types/jest": "^24.9.1",
+    "@types/jest": "24.9.1",
     "@types/node": "13.5.0",
-    "@types/update-notifier": "^2.5.0",
+    "@types/update-notifier": "2.5.0",
     "@types/yargs": "15.0.1",
     "@zeit/ncc": "0.21.0",
     "aws-sdk": "2.610.0",
@@ -67,7 +69,6 @@
     "ts-jest": "^25.0.0",
     "ts-node": "8.6.2",
     "typescript": "3.7.5",
-    "update-notifier": "^4.1.0",
     "yargs": "15.1.0"
   }
 }

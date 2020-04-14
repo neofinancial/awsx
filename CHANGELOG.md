@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (April 14, 2020)
+
+Move `update-notifier` to dependencies and exclude from ncc build
+
 ## 1.1.0 (April 2, 2020)
 
 Adding and augmenting commands to enable assumed role adoption
