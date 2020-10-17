@@ -12,18 +12,21 @@ const AWSX_PROFILE_PATH = path.join(AWSX_HOME, 'profiles');
 const AWS_CREDENTIALS_PATH = path.join(AWS_HOME, 'credentials');
 const AWS_CONFIG_PATH = path.join(AWS_HOME, 'config');
 
+const copyFileIfExists = (sourcePath: string, destPath: string): void => {
+  if (fs.existsSync(sourcePath)) {
+    fs.copyFileSync(sourcePath, destPath);
+  }
+};
+
 const backupConfig = (): void => {
   const backupSuffix = new Date()
     .toISOString()
     .replace(/[^\d]/g, '')
     .slice(0, 14);
 
-  fs.copyFileSync(AWS_CONFIG_PATH, `${AWS_CONFIG_PATH}.${backupSuffix}`);
-  fs.copyFileSync(AWS_CREDENTIALS_PATH, `${AWS_CREDENTIALS_PATH}.${backupSuffix}`);
-
-  if (fs.existsSync(AWSX_PROFILE_PATH)) {
-    fs.copyFileSync(AWSX_PROFILE_PATH, `${AWSX_PROFILE_PATH}.${backupSuffix}`);
-  }
+  copyFileIfExists(AWS_CONFIG_PATH, `${AWS_CONFIG_PATH}.${backupSuffix}`);
+  copyFileIfExists(AWS_CREDENTIALS_PATH, `${AWS_CREDENTIALS_PATH}.${backupSuffix}`);
+  copyFileIfExists(AWSX_PROFILE_PATH, `${AWSX_PROFILE_PATH}.${backupSuffix}`);
 };
 
 const initConfig = (): void => {
