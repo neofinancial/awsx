@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/camelcase */
 import fs from 'fs';
 import ini from 'ini';
+import path from 'path';
 
 import { ProfileConfiguration, AWSCredentials, AssumeRoleProfileConfiguration } from './mfa-login';
 
-export const AWSX_HOME = `${process.env.HOME}/.awsx`;
-
-const AWS_HOME = `${process.env.HOME}/.aws`;
-
-const AWSX_PROFILE_PATH = `${AWSX_HOME}/profiles`;
-const AWS_CREDENTIALS_PATH = `${AWS_HOME}/credentials`;
-const AWS_CONFIG_PATH = `${AWS_HOME}/config`;
+const HOME = process.env.HOME as string;
+const AWSX_HOME = path.join(HOME, '.awsx');
+const AWS_HOME = path.join(HOME, '.aws');
+const AWSX_PROFILE_PATH = path.join(AWSX_HOME, 'profiles');
+const AWS_CREDENTIALS_PATH = path.join(AWS_HOME, 'credentials');
+const AWS_CONFIG_PATH = path.join(AWS_HOME, 'config');
 
 const backupConfig = (): void => {
   const backupSuffix = new Date()
@@ -253,5 +253,6 @@ export {
   getAssumeRoleProfiles,
   getAssumeRoleProfile,
   createAssumeRoleProfile,
-  deleteAssumeRoleProfile
+  deleteAssumeRoleProfile,
+  AWSX_HOME
 };
