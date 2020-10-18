@@ -74,7 +74,7 @@ If you don't have MFA set up on your AWS account you can enable it by following 
 
 #### `awsx remove-assume-role-profile [profile]`
 
-### Checking status of an awsx sessions
+### Checking status of current session
 
 #### `awsx status`
 
