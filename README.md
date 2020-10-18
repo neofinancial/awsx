@@ -74,6 +74,10 @@ If you don't have MFA set up on your AWS account you can enable it by following 
 
 #### `awsx remove-assume-role-profile [profile]`
 
+### Checking status of an awsx sessions
+
+#### `awsx status`
+
 ## Contributing
 
 If you'd like to contribute to awsx we recommend that you first [open an issue](https://github.com/neofinancial/awsx/issues) to discuss your proposed change.

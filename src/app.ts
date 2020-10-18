@@ -837,6 +837,17 @@ const awsx = (): void => {
         }
       }
     })
+    .command({
+      command: 'status',
+      describe: 'Show the status of your current awsx session',
+      handler: (): void => {
+        try {
+          console.log(chalk.green(`Current profile is '${currentProfile}'`));
+        } catch (error) {
+          console.error(chalk.red(error.message));
+        }
+      }
+    })
     .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
     .help().argv;
 };
