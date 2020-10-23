@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (October 22, 2020)
+
+Updated dependencies
+
 ## 1.1.1 (April 14, 2020)
 
 Move `update-notifier` to dependencies and exclude from ncc build
