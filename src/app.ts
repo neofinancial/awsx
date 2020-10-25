@@ -609,10 +609,15 @@ const status = async (): Promise<void> => {
   const response = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
 
   if (response) {
-    const role = response.Arn?.split(':')[5];
-    const roleName = role?.split('/')[1];
+    try {
+      const role = response.Arn?.split(':')[5];
+      const roleName = role?.split('/')[1];
 
-    console.log(chalk.green(`Role -> ${roleName}`));
+      console.log(chalk.green(`Role -> ${roleName}`));
+    } catch (error) {
+      console.log(chalk.green(`Role -> 'Unknown`));
+    }
+
     console.log(chalk.green(`Account -> ${response.Account}`));
     console.log(chalk.green(`Profile -> ${currentProfile}`));
   } else {
