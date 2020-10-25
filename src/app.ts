@@ -2,6 +2,8 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
+import { STS } from 'aws-sdk';
+import { promisify } from 'util';
 
 import {
   backupConfig,
@@ -593,6 +595,32 @@ const disableMfa = async (name?: string): Promise<void> => {
   console.log(chalk.green(`Disabled MFA on profile '${profileName}'`));
 };
 
+const timedOutStatusCheck = async (): Promise<void> => {
+  const delay = promisify(setTimeout);
+
+  await delay(2000);
+};
+
+const status = async (): Promise<void> => {
+  console.log(chalk.yellow(`Checking status...`));
+
+  const sts = new STS();
+
+  const response = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
+
+  if (response) {
+    const role = response.Arn?.split(':')[5];
+    const roleName = role?.split('/')[1];
+
+    console.log(chalk.green(`Role -> ${roleName}`));
+    console.log(chalk.green(`Account -> ${response.Account}`));
+    console.log(chalk.green(`Profile -> ${currentProfile}`));
+  } else {
+    console.log(chalk.red(`Session is expired or invalid`));
+    process.exit();
+  }
+};
+
 const awsx = (): void => {
   updateNotifier({ pkg }).notify();
 
@@ -725,6 +753,13 @@ const awsx = (): void => {
       }
     })
     .command({
+      command: 'current-profile',
+      describe: 'Show the current profile',
+      handler: (): void => {
+        console.log(chalk.green(`${currentProfile}`));
+      }
+    })
+    .command({
       command:
         'add-assume-role-profile [profile] [parent-profile] [role-arn] [default-region] [output-format]',
       describe: 'Add assume role profile',
@@ -840,11 +875,11 @@ const awsx = (): void => {
     .command({
       command: 'status',
       describe: 'Show the status of your current awsx session',
-      handler: (): void => {
+      handler: async (): Promise<void> => {
         try {
-          console.log(chalk.green(`Current profile is '${currentProfile}'`));
+          await status();
         } catch (error) {
-          console.error(chalk.red(error.message));
+          console.log(chalk.red(`Session is expired or invalid`));
         }
       }
     })

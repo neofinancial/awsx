@@ -66,6 +66,10 @@ If you don't have MFA set up on your AWS account you can enable it by following 
 
 #### `awsx remove-profile [profile]`
 
+### Get current profile
+
+#### `awsx current-profile`
+
 ### Adding an assume role profile
 
 #### `awsx add-assume-role-profile [profile] [parent-profile] [role-arn] [default-region] [output-format]`
