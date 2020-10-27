@@ -598,26 +598,19 @@ const disableMfa = async (name?: string): Promise<void> => {
 const timedOutStatusCheck = async (): Promise<void> => {
   const delay = promisify(setTimeout);
 
-  await delay(2000);
+  await delay(1500);
 };
 
 const status = async (): Promise<void> => {
-  console.log(chalk.yellow(`Checking status...`));
-
   const sts = new STS();
 
   const response = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
 
   if (response) {
-    try {
-      const role = response.Arn?.split(':')[5];
-      const roleName = role?.split('/')[1];
+    const role = response.Arn?.split(':')[5];
+    const roleName = role?.split('/')[1];
 
-      console.log(chalk.green(`Role -> ${roleName}`));
-    } catch (error) {
-      console.log(chalk.green(`Role -> 'Unknown`));
-    }
-
+    console.log(chalk.green(`Role -> ${roleName}`));
     console.log(chalk.green(`Account -> ${response.Account}`));
     console.log(chalk.green(`Profile -> ${currentProfile}`));
   } else {
