@@ -2,6 +2,7 @@
 import fs from 'fs';
 import ini from 'ini';
 import path from 'path';
+import chalk from 'chalk';
 
 import { ProfileConfiguration, AWSCredentials, AssumeRoleProfileConfiguration } from './mfa-login';
 
@@ -11,6 +12,28 @@ const AWS_HOME = path.join(HOME, '.aws');
 const AWSX_PROFILE_PATH = path.join(AWSX_HOME, 'profiles');
 const AWS_CREDENTIALS_PATH = path.join(AWS_HOME, 'credentials');
 const AWS_CONFIG_PATH = path.join(AWS_HOME, 'config');
+
+const fileCheck = (): void => {
+  try {
+    const missingFiles: string[] = [];
+
+    !fs.existsSync(AWSX_PROFILE_PATH) && missingFiles.push(AWSX_PROFILE_PATH);
+    !fs.existsSync(AWS_CREDENTIALS_PATH) && missingFiles.push(AWS_CREDENTIALS_PATH);
+    !fs.existsSync(AWS_CONFIG_PATH) && missingFiles.push(AWS_CONFIG_PATH);
+
+    if (missingFiles.length > 0) {
+      throw missingFiles;
+    }
+  } catch (e) {
+    console.error('You are missing a required file at:');
+
+    for (const file of e) {
+      console.error(chalk.red(file));
+    }
+
+    process.exit(1);
+  }
+};
 
 const copyFileIfExists = (sourcePath: string, destPath: string): void => {
   if (fs.existsSync(sourcePath)) {
@@ -244,6 +267,7 @@ const deleteAssumeRoleProfile = (profileName: string): void => {
 };
 
 export {
+  fileCheck,
   backupConfig,
   initConfig,
   isMfaSessionStillValid,
