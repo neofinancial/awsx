@@ -6,7 +6,7 @@ import { STS } from 'aws-sdk';
 import { promisify } from 'util';
 
 import {
-  fileCheck,
+  configFileCheck,
   backupConfig,
   initConfig,
   getProfileNames,
@@ -621,7 +621,7 @@ const status = async (): Promise<void> => {
 };
 
 const awsx = (): void => {
-  fileCheck();
+  configFileCheck();
   updateNotifier({ pkg }).notify();
 
   yargs
@@ -728,7 +728,7 @@ const awsx = (): void => {
             args.mfaExpiry
           );
         } catch (error) {
-          console.error('add profile catch error', chalk.red(error.message));
+          console.error(chalk.red(error.message));
         }
       }
     })

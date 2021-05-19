@@ -2,7 +2,6 @@
 import fs from 'fs';
 import ini from 'ini';
 import path from 'path';
-import chalk from 'chalk';
 
 import { ProfileConfiguration, AWSCredentials, AssumeRoleProfileConfiguration } from './mfa-login';
 
@@ -13,24 +12,19 @@ const AWSX_PROFILE_PATH = path.join(AWSX_HOME, 'profiles');
 const AWS_CREDENTIALS_PATH = path.join(AWS_HOME, 'credentials');
 const AWS_CONFIG_PATH = path.join(AWS_HOME, 'config');
 
-const fileCheck = (): void => {
+const configFileCheck = (): void => {
   try {
-    const missingFiles: string[] = [];
+    const hasCredentials = fs.existsSync(AWS_CREDENTIALS_PATH);
+    const hasConfig = fs.existsSync(AWS_CONFIG_PATH);
 
-    !fs.existsSync(AWSX_PROFILE_PATH) && missingFiles.push(AWSX_PROFILE_PATH);
-    !fs.existsSync(AWS_CREDENTIALS_PATH) && missingFiles.push(AWS_CREDENTIALS_PATH);
-    !fs.existsSync(AWS_CONFIG_PATH) && missingFiles.push(AWS_CONFIG_PATH);
+    !hasCredentials && console.error(`You are missing a required file at: ${AWS_CREDENTIALS_PATH}`);
 
-    if (missingFiles.length > 0) {
-      throw missingFiles;
+    !hasConfig && console.error(`You are missing a required file at: ${AWS_CONFIG_PATH}`);
+
+    if (!hasCredentials || !hasConfig) {
+      throw Error;
     }
-  } catch (e) {
-    console.error('You are missing a required file at:');
-
-    for (const file of e) {
-      console.error(chalk.red(file));
-    }
-
+  } catch (error) {
     process.exit(1);
   }
 };
@@ -267,7 +261,7 @@ const deleteAssumeRoleProfile = (profileName: string): void => {
 };
 
 export {
-  fileCheck,
+  configFileCheck,
   backupConfig,
   initConfig,
   isMfaSessionStillValid,
