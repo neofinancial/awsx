@@ -621,7 +621,12 @@ const status = async (): Promise<void> => {
 };
 
 const awsx = (): void => {
-  configFileCheck();
+  try {
+    configFileCheck();
+  } catch (error) {
+    process.exit(1);
+  }
+
   updateNotifier({ pkg }).notify();
 
   yargs

@@ -13,19 +13,19 @@ const AWS_CREDENTIALS_PATH = path.join(AWS_HOME, 'credentials');
 const AWS_CONFIG_PATH = path.join(AWS_HOME, 'config');
 
 const configFileCheck = (): void => {
-  try {
-    const hasCredentials = fs.existsSync(AWS_CREDENTIALS_PATH);
-    const hasConfig = fs.existsSync(AWS_CONFIG_PATH);
+  const hasCredentials = fs.existsSync(AWS_CREDENTIALS_PATH);
+  const hasConfig = fs.existsSync(AWS_CONFIG_PATH);
 
-    !hasCredentials && console.error(`You are missing a required file at: ${AWS_CREDENTIALS_PATH}`);
+  !hasCredentials && console.error(`You are missing a required file at: ${AWS_CREDENTIALS_PATH}`);
 
-    !hasConfig && console.error(`You are missing a required file at: ${AWS_CONFIG_PATH}`);
+  !hasConfig && console.error(`You are missing a required file at: ${AWS_CONFIG_PATH}`);
 
-    if (!hasCredentials || !hasConfig) {
-      throw Error;
-    }
-  } catch (error) {
-    process.exit(1);
+  if (!hasCredentials || !hasConfig) {
+    console.error(
+      `Run aws configure to fix this error: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html`
+    );
+
+    throw new Error('Missing a required configuration file');
   }
 };
 
