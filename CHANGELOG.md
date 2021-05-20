@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (May 19, 2021)
+
+Added error handling for missing configuration files
+
 ## 1.1.1 (April 14, 2020)
 
 Move `update-notifier` to dependencies and exclude from ncc build
