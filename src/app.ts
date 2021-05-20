@@ -6,6 +6,7 @@ import { STS } from 'aws-sdk';
 import { promisify } from 'util';
 
 import {
+  configFileCheck,
   backupConfig,
   initConfig,
   getProfileNames,
@@ -620,6 +621,12 @@ const status = async (): Promise<void> => {
 };
 
 const awsx = (): void => {
+  try {
+    configFileCheck();
+  } catch (error) {
+    process.exit(1);
+  }
+
   updateNotifier({ pkg }).notify();
 
   yargs
