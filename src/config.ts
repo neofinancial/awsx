@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/camelcase */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import fs from 'fs';
 import ini from 'ini';
 import path from 'path';
@@ -36,10 +37,7 @@ const copyFileIfExists = (sourcePath: string, destPath: string): void => {
 };
 
 const backupConfig = (): void => {
-  const backupSuffix = new Date()
-    .toISOString()
-    .replace(/[^\d]/g, '')
-    .slice(0, 14);
+  const backupSuffix = new Date().toISOString().replace(/\D/g, '').slice(0, 14);
 
   copyFileIfExists(AWS_CONFIG_PATH, `${AWS_CONFIG_PATH}.${backupSuffix}`);
   copyFileIfExists(AWS_CREDENTIALS_PATH, `${AWS_CREDENTIALS_PATH}.${backupSuffix}`);
@@ -70,7 +68,7 @@ const isMfaSessionStillValid = (
 const getConfig = (filePath: string): any => {
   try {
     return ini.parse(fs.readFileSync(filePath, 'utf-8'));
-  } catch (error) {
+  } catch {
     return {};
   }
 };
@@ -83,7 +81,7 @@ const getProfiles = (): ProfileConfiguration[] => {
   const profiles = [];
 
   for (const profile in awsCredentials) {
-    if (awsxConfig[profile] && awsxConfig[profile].mfaEnabled) {
+    if (awsxConfig[profile]?.mfaEnabled) {
       profiles.push({
         profileName: awsxConfig[profile].profileName,
         awsAccessKeyId: awsxConfig[profile].awsAccessKeyId,
@@ -97,7 +95,7 @@ const getProfiles = (): ProfileConfiguration[] => {
         mfaSessionValid: isMfaSessionStillValid(
           Number(awsxConfig[profile].lastLoginTimeInSeconds),
           Number(awsxConfig[profile].sessionLengthInSeconds)
-        )
+        ),
       });
     } else {
       profiles.push({
@@ -106,7 +104,7 @@ const getProfiles = (): ProfileConfiguration[] => {
         awsSecretAccessKey: awsCredentials[profile].aws_secret_access_key,
         awsDefaultRegion: awsConfig[profile] ? awsConfig[profile].region : null,
         awsOutputFormat: awsConfig[profile] ? awsConfig[profile].output : null,
-        mfaEnabled: false
+        mfaEnabled: false,
       });
     }
   }
@@ -115,11 +113,11 @@ const getProfiles = (): ProfileConfiguration[] => {
 };
 
 const getProfileNames = (): string[] => {
-  return getProfiles().map(profile => profile.profileName);
+  return getProfiles().map((profile) => profile.profileName);
 };
 
 const getProfile = (profileName: string): ProfileConfiguration | undefined => {
-  return getProfiles().find(profile => profile.profileName === profileName);
+  return getProfiles().find((profile) => profile.profileName === profileName);
 };
 
 const getCredentials = (profileName: string): AWSCredentials | null => {
@@ -133,7 +131,7 @@ const getCredentials = (profileName: string): AWSCredentials | null => {
     profileName: profileName,
     awsAccessKeyId: credentials.aws_access_key_id,
     awsSecretAccessKey: credentials.aws_secret_access_key,
-    awsSessionToken: credentials.aws_session_token
+    awsSessionToken: credentials.aws_session_token,
   };
 };
 
@@ -161,7 +159,7 @@ const writeTemporaryCredentials = (
     awsCredentials[profile.profileName] = {
       aws_access_key_id: credentials.awsAccessKeyId,
       aws_secret_access_key: credentials.awsSecretAccessKey,
-      aws_session_token: credentials.awsSessionToken
+      aws_session_token: credentials.awsSessionToken,
     };
 
     writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
@@ -180,7 +178,7 @@ const createProfile = (profile: ProfileConfiguration): void => {
 
   awsConfig[profile.profileName] = {
     region: profile.awsDefaultRegion,
-    output: profile.awsOutputFormat
+    output: profile.awsOutputFormat,
   };
 
   writeConfig(AWS_CONFIG_PATH, awsConfig);
@@ -189,7 +187,7 @@ const createProfile = (profile: ProfileConfiguration): void => {
 
   awsCredentials[profile.profileName] = {
     aws_access_key_id: profile.awsAccessKeyId,
-    aws_secret_access_key: profile.awsSecretAccessKey
+    aws_secret_access_key: profile.awsSecretAccessKey,
   };
 
   writeConfig(AWS_CREDENTIALS_PATH, awsCredentials);
@@ -218,26 +216,28 @@ const getAssumeRoleProfiles = (parentProfile?: string): AssumeRoleProfileConfigu
   const profiles: AssumeRoleProfileConfiguration[] = [];
 
   for (const profile of Object.keys(awsConfig)) {
-    if (awsConfig[profile] && awsConfig[profile].role_arn) {
+    if (awsConfig[profile]?.role_arn) {
       profiles.push({
         profileName: profile,
         parentProfileName: awsConfig[profile].source_profile,
         awsRoleArn: awsConfig[profile].role_arn,
         awsDefaultRegion: awsConfig[profile].region,
-        awsOutputFormat: awsConfig[profile].output
+        awsOutputFormat: awsConfig[profile].output,
       });
     }
   }
 
   if (parentProfile) {
-    return profiles.filter(profile => profile.parentProfileName === parentProfile);
+    return profiles.filter((profile) => profile.parentProfileName === parentProfile);
   } else {
     return profiles;
   }
 };
 
 const getAssumeRoleProfile = (profileName: string): AssumeRoleProfileConfiguration | undefined => {
-  return getAssumeRoleProfiles().find(profile => profile.profileName === `profile ${profileName}`);
+  return getAssumeRoleProfiles().find(
+    (profile) => profile.profileName === `profile ${profileName}`
+  );
 };
 
 const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void => {
@@ -247,7 +247,7 @@ const createAssumeRoleProfile = (profile: AssumeRoleProfileConfiguration): void 
     role_arn: profile.awsRoleArn,
     source_profile: profile.parentProfileName,
     region: profile.awsDefaultRegion,
-    output: profile.awsOutputFormat
+    output: profile.awsOutputFormat,
   };
 
   writeConfig(AWS_CONFIG_PATH, awsConfig);
@@ -275,5 +275,5 @@ export {
   getAssumeRoleProfile,
   createAssumeRoleProfile,
   deleteAssumeRoleProfile,
-  AWSX_HOME
+  AWSX_HOME,
 };

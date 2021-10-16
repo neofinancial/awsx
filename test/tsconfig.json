@@ -1,17 +1,6 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "strict": true,
-    "strictNullChecks": false,
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "target": "es6",
-    "moduleResolution": "node",
-    "sourceMap": true,
-    "outDir": "build",
-    "baseUrl": ".",
-    "typeRoots": ["../src/types", "../node_modules/@types"],
     "paths": {
       "*": ["*", "node_modules/*", "src/*"]
     }

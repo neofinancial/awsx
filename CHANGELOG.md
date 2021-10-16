@@ -1,4 +1,9 @@
-# Changelog
+# awsx changelog
+
+## 1.1.3 (October 16, 2021)
+
+- Switch to npm
+- Update dependencies
 
 ## 1.1.2 (May 19, 2021)
 
