@@ -654,7 +654,7 @@ const whoami = async (): Promise<void> => {
   );
 
   for (const [k, v] of Object.entries(whoAmI)) {
-    console.log(chalk.green(`${k.toUpperCase().padEnd(maxKeyLength)} -> ${v}`));
+    console.log(chalk.green(`${k.toUpperCase().padStart(maxKeyLength)} -> ${v}`));
   }
 };
 
