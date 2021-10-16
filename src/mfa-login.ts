@@ -45,7 +45,7 @@ const createStsParameters = (
   return {
     DurationSeconds: configuration.sessionLengthInSeconds,
     SerialNumber: configuration.mfaDeviceArn,
-    TokenCode: mfaToken
+    TokenCode: mfaToken,
   };
 };
 
@@ -57,7 +57,7 @@ const createTemporaryCredentials = (
     profileName: profileName,
     awsAccessKeyId: credentials.AccessKeyId,
     awsSecretAccessKey: credentials.SecretAccessKey,
-    awsSessionToken: credentials.SessionToken
+    awsSessionToken: credentials.SessionToken,
   };
 };
 
@@ -68,9 +68,7 @@ const getTemporaryCredentials = async (
 ): Promise<void> => {
   const stsParameters = createStsParameters(configuration, mfaToken);
 
-  const response = await createStsClient(configuration)
-    .getSessionToken(stsParameters)
-    .promise();
+  const response = await createStsClient(configuration).getSessionToken(stsParameters).promise();
 
   if (response.Credentials) {
     onLogin(createTemporaryCredentials(configuration.profileName, response.Credentials));

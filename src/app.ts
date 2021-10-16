@@ -2,7 +2,7 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
-import { STS } from 'aws-sdk';
+import { STS, IAM } from 'aws-sdk';
 import { promisify } from 'util';
 
 import {
@@ -620,6 +620,43 @@ const status = async (): Promise<void> => {
   }
 };
 
+const assumedRole = (arn?: string): string | undefined => {
+  return arn ? arn.split('/')[1] : undefined;
+};
+
+const whoami = async (): Promise<void> => {
+  const sts = new STS();
+  const iam = new IAM();
+
+  const identity = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
+
+  if (!identity) {
+    console.log(chalk.red(`huh`));
+    process.exit();
+  }
+
+  // Should be available if the identity call returns truthy, so shouldn't need a second timed-out race.
+  const aliases = await iam.listAccountAliases().promise();
+
+  const whoAmI = {
+    account: identity.Account,
+    aliases: aliases?.AccountAliases,
+    arn: identity.Arn,
+    assumedRole: assumedRole(identity.Arn),
+    profile: currentProfile,
+    userId: identity.UserId,
+  };
+
+  const maxKeyLength = Math.max.apply(
+    null,
+    Object.keys(whoAmI).map((k) => k.length)
+  );
+
+  for (const [k, v] of Object.entries(whoAmI)) {
+    console.log(chalk.green(`${k.toUpperCase().padEnd(maxKeyLength)} -> ${v}`));
+  }
+};
+
 const awsx = (): void => {
   try {
     configFileCheck();
@@ -880,11 +917,23 @@ const awsx = (): void => {
     .command({
       command: 'status',
       describe: 'Show the status of your current awsx session',
+      deprecated: 'Use `whoami` instead.',
       handler: async (): Promise<void> => {
         try {
           await status();
         } catch {
           console.log(chalk.red(`Session is expired or invalid`));
+        }
+      },
+    })
+    .command({
+      command: 'whoami',
+      describe: "Show what AWS account and identity you're using",
+      handler: async (): Promise<void> => {
+        try {
+          await whoami();
+        } catch (error) {
+          console.log(chalk.red(error.message));
         }
       },
     })
@@ -897,4 +946,4 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export default awsx;
-export { validateMfaExpiry };
+export { assumedRole, validateMfaExpiry };

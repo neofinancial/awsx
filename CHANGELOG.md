@@ -1,5 +1,10 @@
 # awsx changelog
 
+## 1.2.0 (October 16, 2021)
+
+- Add `whoami` command
+- Deprecate `status` command
+
 ## 1.1.3 (October 16, 2021)
 
 - Switch to npm
