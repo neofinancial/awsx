@@ -88,21 +88,21 @@ If you'd like to contribute to awsx we recommend that you first [open an issue](
 
 1. Fork this repo
 1. Clone the forked repo
-1. Install dependencies: `yarn`
+1. Install dependencies: `npm install`
 
 ### Development
 
-#### `yarn start`
+#### `npm start`
 
 ### Building
 
-#### `yarn build`
+#### `npm run build`
 
-To clean the build directory run `yarn clean`
+To clean the build directory run `npm run clean`
 
 ### Testing
 
-#### `yarn test`
+#### `npm run test`
 
 ## Publishing
 

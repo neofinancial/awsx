@@ -1,7 +1,7 @@
 {
   "name": "awsx",
   "description": "AWS CLI profile switcher with MFA support",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "author": "Neo Financial Engineering <engineering@neofinancial.com>",
   "license": "MIT",
   "repository": {
@@ -9,7 +9,7 @@
     "url": "https://github.com/neofinancial/awsx"
   },
   "engines": {
-    "node": ">=10.0.0"
+    "node": ">=12.0.0"
   },
   "bin": {
     "_awsx_prompt": "./bin/awsx.js",
@@ -45,30 +45,30 @@
     ]
   },
   "dependencies": {
-    "update-notifier": "4.1.0"
+    "update-notifier": "4.1.3"
   },
   "devDependencies": {
-    "@types/ini": "1.3.30",
+    "@types/ini": "1.3.31",
     "@types/inquirer": "6.5.0",
     "@types/jest": "24.9.1",
-    "@types/node": "13.5.0",
-    "@types/update-notifier": "2.5.0",
-    "@types/yargs": "15.0.1",
+    "@types/node": "13.13.52",
+    "@types/update-notifier": "2.5.2",
+    "@types/yargs": "15.0.14",
     "@zeit/ncc": "0.21.0",
-    "aws-sdk": "2.610.0",
+    "aws-sdk": "2.1009.0",
     "chalk": "3.0.0",
     "eslint": "6.8.0",
-    "eslint-config-neo": "0.5.2",
-    "husky": "4.2.1",
-    "ini": "1.3.6",
-    "inquirer": "7.0.4",
-    "jest": "^25.1.0",
-    "lint-staged": "10.0.2",
+    "eslint-config-neo": "0.6.2",
+    "husky": "4.3.8",
+    "ini": "1.3.8",
+    "inquirer": "7.3.3",
+    "jest": "^25.5.4",
+    "lint-staged": "10.5.4",
     "prettier": "1.19.1",
-    "rimraf": "3.0.0",
-    "ts-jest": "^25.0.0",
-    "ts-node": "8.6.2",
-    "typescript": "3.7.5",
-    "yargs": "15.1.0"
+    "rimraf": "3.0.2",
+    "ts-jest": "^25.5.1",
+    "ts-node": "8.10.2",
+    "typescript": "3.9.10",
+    "yargs": "15.4.1"
   }
 }

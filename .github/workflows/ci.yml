@@ -8,30 +8,21 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        node: [10, 12, 13]
+        node: [12, 14, 16]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
-      - name: Get yarn cache
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - name: Cache node modules
-        uses: actions/cache@v1
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          cache: 'npm'
       - name: Install
-        run: yarn --prefer-offline --frozen-lockfile --no-progress --non-interactive
+        run: npm ci
       - name: Lint
-        run: yarn lint
+        run: npm run lint
       - name: Build
-        run: yarn build
+        run: npm run build
       - name: Test
-        run: yarn test --coverage
+        run: npm test --coverage
       - name: Upload coverage
         uses: codecov/codecov-action@v1
         with:
