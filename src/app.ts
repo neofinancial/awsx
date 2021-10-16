@@ -18,12 +18,12 @@ import {
   createAssumeRoleProfile,
   getAssumeRoleProfiles,
   deleteAssumeRoleProfile,
-  getAssumeRoleProfile
+  getAssumeRoleProfile,
 } from './config';
 import getTemporaryCredentials, {
   ProfileConfiguration,
   AWSCredentials,
-  AssumeRoleProfileConfiguration
+  AssumeRoleProfileConfiguration,
 } from './mfa-login';
 import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
@@ -45,7 +45,7 @@ const switchAssumeRoleProfile = async (
   parentProfileName: string,
   assumeRoleProfileName?: string
 ): Promise<string | undefined> => {
-  const assumeRoleProfiles = getAssumeRoleProfiles(parentProfileName).map(profile =>
+  const assumeRoleProfiles = getAssumeRoleProfiles(parentProfileName).map((profile) =>
     profile.profileName.replace('profile ', '')
   );
 
@@ -66,8 +66,8 @@ const switchAssumeRoleProfile = async (
         name: 'profile',
         message: 'Choose an assume role profile',
         choices: [rootProfileOption, ...assumeRoleProfiles],
-        default: currentProfile || assumeRoleProfiles[0]
-      }
+        default: currentProfile || assumeRoleProfiles[0],
+      },
     ]);
 
     if (answers.profile !== rootProfileOption) {
@@ -98,8 +98,8 @@ const switchProfile = async (
         name: 'profile',
         message: 'Choose a profile',
         choices: profiles,
-        default: currentProfile || profiles[0]
-      }
+        default: currentProfile || profiles[0],
+      },
     ]);
 
     currentProfile = answers.profile;
@@ -141,8 +141,8 @@ const switchProfile = async (
       {
         type: 'input',
         name: 'token',
-        message: 'MFA token'
-      }
+        message: 'MFA token',
+      },
     ]);
 
     await getTemporaryCredentials(
@@ -188,7 +188,7 @@ const addProfile = async (
       awsSecretAccessKey: secretKey,
       awsDefaultRegion: defaultRegion,
       awsOutputFormat: outputFormat,
-      mfaEnabled: false
+      mfaEnabled: false,
     };
 
     if (mfaArn && mfaExpiry) {
@@ -204,35 +204,35 @@ const addProfile = async (
       {
         type: 'input',
         name: 'profile',
-        message: 'Name'
+        message: 'Name',
       },
       {
         type: 'input',
         name: 'accessKey',
-        message: 'Access key'
+        message: 'Access key',
       },
       {
         type: 'input',
         name: 'secretKey',
-        message: 'Secret key'
+        message: 'Secret key',
       },
       {
         type: 'input',
         name: 'defaultRegion',
-        message: 'Default region'
+        message: 'Default region',
       },
       {
         type: 'list',
         name: 'outputFormat',
         message: 'Output format',
         choices: ['json', 'yaml', 'text', 'table'],
-        default: 'json'
+        default: 'json',
       },
       {
         type: 'confirm',
         name: 'useMfa',
-        message: 'Use MFA'
-      }
+        message: 'Use MFA',
+      },
     ]);
 
     const profile: ProfileConfiguration = {
@@ -241,7 +241,7 @@ const addProfile = async (
       awsSecretAccessKey: profileAnswers.secretKey,
       awsDefaultRegion: profileAnswers.defaultRegion,
       awsOutputFormat: profileAnswers.outputFormat,
-      mfaEnabled: profileAnswers.useMfa
+      mfaEnabled: profileAnswers.useMfa,
     };
 
     if (profileAnswers.useMfa) {
@@ -249,15 +249,15 @@ const addProfile = async (
         {
           type: 'input',
           name: 'mfaArn',
-          message: 'MFA device ARN'
+          message: 'MFA device ARN',
         },
         {
           type: 'number',
           name: 'mfaExpiry',
           message: 'MFA token expiry (seconds)',
           default: 3600,
-          validate: validateMfaExpiry
-        }
+          validate: validateMfaExpiry,
+        },
       ]);
 
       profile.mfaDeviceArn = mfaAnswers.mfaArn;
@@ -281,8 +281,8 @@ const removeProfile = async (name?: string): Promise<void> => {
         name: 'profile',
         message: 'Choose a profile',
         choices: profiles,
-        default: currentProfile || profiles[0]
-      }
+        default: currentProfile || profiles[0],
+      },
     ]);
 
     profileName = answers.profile;
@@ -300,8 +300,8 @@ const removeProfile = async (name?: string): Promise<void> => {
     {
       type: 'confirm',
       name: 'confirm',
-      message: `Are you sure you want to remove profile '${profileName}'?`
-    }
+      message: `Are you sure you want to remove profile '${profileName}'?`,
+    },
   ]);
 
   if (profileName && confirmAnswer.confirm) {
@@ -323,9 +323,9 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
         type: 'list',
         name: 'profile',
         message: 'Choose a profile',
-        choices: assumeRoleProfiles.map(profile => profile.profileName.replace('profile ', '')),
-        default: currentProfile || assumeRoleProfiles[0]
-      }
+        choices: assumeRoleProfiles.map((profile) => profile.profileName.replace('profile ', '')),
+        default: currentProfile || assumeRoleProfiles[0],
+      },
     ]);
 
     profileName = answers.profile;
@@ -343,8 +343,8 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
     {
       type: 'confirm',
       name: 'confirm',
-      message: `Are you sure you want to remove assumed role profile '${profileName}'?`
-    }
+      message: `Are you sure you want to remove assumed role profile '${profileName}'?`,
+    },
   ]);
 
   if (profileName && confirmAnswer.confirm) {
@@ -371,19 +371,19 @@ const addAssumeRoleProfile = async (
       {
         type: 'input',
         name: 'profile',
-        message: 'Name'
+        message: 'Name',
       },
       {
         type: 'list',
         name: 'parentProfile',
         message: 'Choose a parent profile',
-        choices: profiles
+        choices: profiles,
       },
       {
         type: 'input',
         name: 'roleArn',
-        message: 'Role ARN'
-      }
+        message: 'Role ARN',
+      },
     ]);
 
     profileName = profileAnswers.profile;
@@ -413,15 +413,15 @@ const addAssumeRoleProfile = async (
       type: 'input',
       name: 'defaultRegion',
       message: 'Default region',
-      default: parent.awsDefaultRegion
+      default: parent.awsDefaultRegion,
     },
     {
       type: 'list',
       name: 'outputFormat',
       message: 'Output format',
       choices: ['json', 'yaml', 'text', 'table'],
-      default: parent.awsOutputFormat
-    }
+      default: parent.awsOutputFormat,
+    },
   ]);
 
   const profile: AssumeRoleProfileConfiguration = {
@@ -429,7 +429,7 @@ const addAssumeRoleProfile = async (
     parentProfileName,
     awsRoleArn,
     awsDefaultRegion: configAnswers.defaultRegion,
-    awsOutputFormat: configAnswers.outputFormat
+    awsOutputFormat: configAnswers.outputFormat,
   };
 
   createAssumeRoleProfile(profile);
@@ -447,8 +447,8 @@ const enableMfa = async (name?: string): Promise<void> => {
         name: 'profile',
         message: 'Choose a profile',
         choices: profiles,
-        default: currentProfile || profiles[0]
-      }
+        default: currentProfile || profiles[0],
+      },
     ]);
 
     profileName = answers.profile;
@@ -473,39 +473,39 @@ const enableMfa = async (name?: string): Promise<void> => {
       type: 'input',
       name: 'accessKey',
       message: 'Access key',
-      default: selectedProfile.awsAccessKeyId
+      default: selectedProfile.awsAccessKeyId,
     },
     {
       type: 'input',
       name: 'secretKey',
       message: 'Secret key',
-      default: selectedProfile.awsSecretAccessKey
+      default: selectedProfile.awsSecretAccessKey,
     },
     {
       type: 'input',
       name: 'defaultRegion',
       message: 'Default region',
-      default: selectedProfile.awsDefaultRegion
+      default: selectedProfile.awsDefaultRegion,
     },
     {
       type: 'list',
       name: 'outputFormat',
       message: 'Output format',
       choices: ['json', 'yaml', 'text', 'table'],
-      default: selectedProfile.awsOutputFormat || 'json'
+      default: selectedProfile.awsOutputFormat || 'json',
     },
     {
       type: 'input',
       name: 'mfaArn',
-      message: 'MFA device ARN'
+      message: 'MFA device ARN',
     },
     {
       type: 'number',
       name: 'mfaExpiry',
       message: 'MFA token expiry (seconds)',
       default: 3600,
-      validate: validateMfaExpiry
-    }
+      validate: validateMfaExpiry,
+    },
   ]);
 
   deleteProfile(profileName);
@@ -517,7 +517,7 @@ const enableMfa = async (name?: string): Promise<void> => {
     awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: true,
     mfaDeviceArn: profileAnswers.mfaArn,
-    sessionLengthInSeconds: profileAnswers.mfaExpiry
+    sessionLengthInSeconds: profileAnswers.mfaExpiry,
   });
 
   console.log(chalk.green(`Enabled MFA on profile '${profileName}'`));
@@ -535,8 +535,8 @@ const disableMfa = async (name?: string): Promise<void> => {
         name: 'profile',
         message: 'Choose a profile',
         choices: profiles,
-        default: currentProfile || profiles[0]
-      }
+        default: currentProfile || profiles[0],
+      },
     ]);
 
     profileName = answers.profile;
@@ -561,26 +561,26 @@ const disableMfa = async (name?: string): Promise<void> => {
       type: 'input',
       name: 'accessKey',
       message: 'Access key',
-      default: selectedProfile.awsAccessKeyId
+      default: selectedProfile.awsAccessKeyId,
     },
     {
       type: 'input',
       name: 'secretKey',
       message: 'Secret key',
-      default: selectedProfile.awsSecretAccessKey
+      default: selectedProfile.awsSecretAccessKey,
     },
     {
       type: 'input',
       name: 'defaultRegion',
       message: 'Default region',
-      default: selectedProfile.awsDefaultRegion
+      default: selectedProfile.awsDefaultRegion,
     },
     {
       type: 'input',
       name: 'outputFormat',
       message: 'Output format',
-      default: selectedProfile.awsOutputFormat
-    }
+      default: selectedProfile.awsOutputFormat,
+    },
   ]);
 
   deleteProfile(profileName);
@@ -590,7 +590,7 @@ const disableMfa = async (name?: string): Promise<void> => {
     awsSecretAccessKey: profileAnswers.secretKey,
     awsDefaultRegion: profileAnswers.defaultRegion,
     awsOutputFormat: profileAnswers.outputFormat,
-    mfaEnabled: false
+    mfaEnabled: false,
   });
 
   console.log(chalk.green(`Disabled MFA on profile '${profileName}'`));
@@ -623,7 +623,7 @@ const status = async (): Promise<void> => {
 const awsx = (): void => {
   try {
     configFileCheck();
-  } catch (error) {
+  } catch {
     process.exit(1);
   }
 
@@ -641,17 +641,17 @@ const awsx = (): void => {
         yargs
           .positional('profile', {
             describe: 'The name of the profile to switch to',
-            type: 'string'
+            type: 'string',
           })
           .positional('assume-role-profile', {
             describe: 'The name of the assumed role profile to switch to',
-            type: 'string'
+            type: 'string',
           })
           .option('force-mfa', {
             alias: 'f',
             describe: 'If the selected profile has MFA enabled, forces a new MFA login',
             type: 'boolean',
-            default: false
+            default: false,
           }),
       handler: async (args: {
         profile?: string;
@@ -664,7 +664,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command:
@@ -684,32 +684,32 @@ const awsx = (): void => {
         yargs
           .positional('profile', {
             type: 'string',
-            describe: 'The name of the profile to create'
+            describe: 'The name of the profile to create',
           })
           .positional('access-key', {
             type: 'string',
-            describe: 'The access key for the new profile'
+            describe: 'The access key for the new profile',
           })
           .positional('secret-key', {
             type: 'string',
-            describe: 'The secret key for the new profile'
+            describe: 'The secret key for the new profile',
           })
           .positional('default-region', {
             type: 'string',
-            describe: 'The default AWS region for the new profile'
+            describe: 'The default AWS region for the new profile',
           })
           .positional('output-format', {
             type: 'string',
-            describe: 'The default AWS CLI output format for the new profile'
+            describe: 'The default AWS CLI output format for the new profile',
           })
           .positional('mfa-arn', {
             type: 'string',
-            describe: 'The ARN of the MFA device for the new profile'
+            describe: 'The ARN of the MFA device for the new profile',
           })
           .positional('mfa-expiry', {
             type: 'number',
             describe: 'MFA session token duration in seconds (between 900 and 129600)',
-            default: 3600
+            default: 3600,
           })
           .implies('profile', ['access-key', 'secret-key']),
       handler: async (args: {
@@ -735,7 +735,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'remove-profile [profile]',
@@ -747,7 +747,7 @@ const awsx = (): void => {
       }> =>
         yargs.positional('profile', {
           type: 'string',
-          describe: 'The name of the profile to delete'
+          describe: 'The name of the profile to delete',
         }),
       handler: async (args: { profile?: string }): Promise<void> => {
         try {
@@ -755,14 +755,14 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'current-profile',
       describe: 'Show the current profile',
       handler: (): void => {
         console.log(chalk.green(`${currentProfile}`));
-      }
+      },
     })
     .command({
       command:
@@ -780,15 +780,15 @@ const awsx = (): void => {
         yargs
           .positional('profile', {
             type: 'string',
-            describe: 'The name of the profile to create'
+            describe: 'The name of the profile to create',
           })
           .positional('parent-profile', {
             type: 'string',
-            describe: 'The name of the parent profile'
+            describe: 'The name of the parent profile',
           })
           .positional('role-arn', {
             type: 'string',
-            describe: 'The arn of the role to assume'
+            describe: 'The arn of the role to assume',
           })
           .implies('profile', ['parent-profile', 'role-arn']),
       handler: async (args: {
@@ -802,7 +802,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'remove-assume-role-profile [profile]',
@@ -814,7 +814,7 @@ const awsx = (): void => {
       }> =>
         yargs.positional('profile', {
           type: 'string',
-          describe: 'The name of the profile to delete'
+          describe: 'The name of the profile to delete',
         }),
       handler: async (args: { profile?: string }): Promise<void> => {
         try {
@@ -822,7 +822,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'enable-mfa [profile]',
@@ -834,7 +834,7 @@ const awsx = (): void => {
       }> =>
         yargs.positional('profile', {
           type: 'string',
-          describe: 'The name of the profile to enable MFA'
+          describe: 'The name of the profile to enable MFA',
         }),
       handler: async (args: { profile?: string }): Promise<void> => {
         try {
@@ -842,7 +842,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'disable-mfa [profile]',
@@ -854,7 +854,7 @@ const awsx = (): void => {
       }> =>
         yargs.positional('profile', {
           type: 'string',
-          describe: 'The name of the profile to disable MFA'
+          describe: 'The name of the profile to disable MFA',
         }),
       handler: async (args: { profile?: string }): Promise<void> => {
         try {
@@ -862,7 +862,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'backup-config',
@@ -875,7 +875,7 @@ const awsx = (): void => {
         } catch (error) {
           console.error(chalk.red(error.message));
         }
-      }
+      },
     })
     .command({
       command: 'status',
@@ -883,10 +883,10 @@ const awsx = (): void => {
       handler: async (): Promise<void> => {
         try {
           await status();
-        } catch (error) {
+        } catch {
           console.log(chalk.red(`Session is expired or invalid`));
         }
-      }
+      },
     })
     .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
     .help().argv;
