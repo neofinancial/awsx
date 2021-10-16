@@ -631,7 +631,7 @@ const whoami = async (): Promise<void> => {
   const identity = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
 
   if (!identity) {
-    console.log(chalk.red(`huh`));
+    console.log(chalk.red(`Session is expired or invalid`));
     process.exit();
   }
 
