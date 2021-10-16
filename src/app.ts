@@ -2,7 +2,7 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
-import { STS, IAM } from 'aws-sdk';
+import AWS, { STS, IAM } from 'aws-sdk';
 import { promisify } from 'util';
 
 import {
@@ -644,6 +644,7 @@ const whoami = async (): Promise<void> => {
     arn: identity.Arn,
     assumedRole: assumedRole(identity.Arn),
     profile: currentProfile,
+    region: AWS.config.region,
     userId: identity.UserId,
   };
 
