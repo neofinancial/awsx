@@ -2,8 +2,7 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
-import AWS, { STS, IAM } from 'aws-sdk';
-import { promisify } from 'util';
+import { STS } from 'aws-sdk';
 
 import {
   configFileCheck,
@@ -27,9 +26,12 @@ import getTemporaryCredentials, {
 } from './mfa-login';
 import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
+import { getCurrentProfile, timeout } from './utils';
+import { whoami } from './command/whoami';
 
 const profiles = getProfileNames();
-let currentProfile = process.env.AWS_PROFILE || '';
+
+let currentProfile = getCurrentProfile();
 
 const validateMfaExpiry = (mfaExpiry: number): boolean | string => {
   if (mfaExpiry <= 0) {
@@ -596,16 +598,10 @@ const disableMfa = async (name?: string): Promise<void> => {
   console.log(chalk.green(`Disabled MFA on profile '${profileName}'`));
 };
 
-const timedOutStatusCheck = async (): Promise<void> => {
-  const delay = promisify(setTimeout);
-
-  await delay(1500);
-};
-
 const status = async (): Promise<void> => {
   const sts = new STS();
 
-  const response = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
+  const response = await Promise.race([sts.getCallerIdentity().promise(), timeout()]);
 
   if (response) {
     const role = response.Arn?.split(':')[5];
@@ -617,44 +613,6 @@ const status = async (): Promise<void> => {
   } else {
     console.log(chalk.red(`Session is expired or invalid`));
     process.exit();
-  }
-};
-
-const assumedRole = (arn?: string): string | undefined => {
-  return arn ? arn.split('/')[1] : undefined;
-};
-
-const whoami = async (): Promise<void> => {
-  const sts = new STS();
-  const iam = new IAM();
-
-  const identity = await Promise.race([sts.getCallerIdentity().promise(), timedOutStatusCheck()]);
-
-  if (!identity) {
-    console.log(chalk.red(`Session is expired or invalid`));
-    process.exit();
-  }
-
-  // Should be available if the identity call returns truthy, so shouldn't need a second timed-out race.
-  const aliases = await iam.listAccountAliases().promise();
-
-  const whoAmI = {
-    account: identity.Account,
-    aliases: aliases?.AccountAliases,
-    arn: identity.Arn,
-    assumedRole: assumedRole(identity.Arn),
-    profile: currentProfile,
-    region: AWS.config.region,
-    userId: identity.UserId,
-  };
-
-  const maxKeyLength = Math.max.apply(
-    null,
-    Object.keys(whoAmI).map((k) => k.length)
-  );
-
-  for (const [k, v] of Object.entries(whoAmI)) {
-    console.log(chalk.green(`${k.toUpperCase().padStart(maxKeyLength)} -> ${v}`));
   }
 };
 
@@ -947,4 +905,4 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export default awsx;
-export { assumedRole, validateMfaExpiry };
+export { validateMfaExpiry };
