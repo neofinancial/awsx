@@ -1,6 +1,6 @@
 import { promisify } from 'util';
 
-const getCurrentProfile = () => {
+const getCurrentProfile = (): string => {
   return process.env.AWS_PROFILE || '';
 };
 

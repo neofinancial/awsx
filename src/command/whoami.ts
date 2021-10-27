@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import AWS, { STS, IAM } from 'aws-sdk';
+
 import { getCurrentProfile, timeout } from '../utils';
 
 const assumedRole = (arn?: string): string | undefined => {
