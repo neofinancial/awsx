@@ -3,7 +3,7 @@
 ## 1.2.0 (October 16, 2021)
 
 - Add `whoami` command
-- Deprecate `status` command
+- Deprecate existing `status` command (made alias for `whoami`)
 
 ## 1.1.3 (October 16, 2021)
 
