@@ -1,7 +1,8 @@
 import chalk from 'chalk';
 import AWS, { STS, IAM } from 'aws-sdk';
 
-import { getCurrentProfile, timeout } from '../utils';
+import { getCurrentProfile } from '../lib/profile';
+import { timeout } from '../lib/time';
 
 const assumedRole = (arn?: string): string | undefined => {
   return arn ? arn.split('/')[1] : undefined;
@@ -11,7 +12,7 @@ const whoami = async (): Promise<void> => {
   const sts = new STS();
   const iam = new IAM();
 
-  const identity = await Promise.race([sts.getCallerIdentity().promise(), timeout()]);
+  const identity = await Promise.race([sts.getCallerIdentity().promise(), timeout(1500)]);
 
   if (!identity) {
     console.log(chalk.red(`Session is expired or invalid`));

@@ -2,7 +2,6 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
-import { STS } from 'aws-sdk';
 
 import {
   configFileCheck,
@@ -26,7 +25,7 @@ import getTemporaryCredentials, {
 } from './mfa-login';
 import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
-import { getCurrentProfile, timeout } from './utils';
+import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
 
 const profiles = getProfileNames();
@@ -598,24 +597,6 @@ const disableMfa = async (name?: string): Promise<void> => {
   console.log(chalk.green(`Disabled MFA on profile '${profileName}'`));
 };
 
-const status = async (): Promise<void> => {
-  const sts = new STS();
-
-  const response = await Promise.race([sts.getCallerIdentity().promise(), timeout()]);
-
-  if (response) {
-    const role = response.Arn?.split(':')[5];
-    const roleName = role?.split('/')[1];
-
-    console.log(chalk.green(`Role -> ${roleName}`));
-    console.log(chalk.green(`Account -> ${response.Account}`));
-    console.log(chalk.green(`Profile -> ${currentProfile}`));
-  } else {
-    console.log(chalk.red(`Session is expired or invalid`));
-    process.exit();
-  }
-};
-
 const awsx = (): void => {
   try {
     configFileCheck();
@@ -874,19 +855,7 @@ const awsx = (): void => {
       },
     })
     .command({
-      command: 'status',
-      describe: 'Show the status of your current awsx session',
-      deprecated: 'Use `whoami` instead.',
-      handler: async (): Promise<void> => {
-        try {
-          await status();
-        } catch {
-          console.log(chalk.red(`Session is expired or invalid`));
-        }
-      },
-    })
-    .command({
-      command: 'whoami',
+      command: ['whoami', 'status'],
       describe: "Show what AWS account and identity you're using",
       handler: async (): Promise<void> => {
         try {
