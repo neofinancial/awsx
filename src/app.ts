@@ -27,6 +27,8 @@ import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
 import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
+import { checkSecretKeyExpiry } from './command/check-secret-expiry';
+import { getExpiryDateInSeconds } from './lib/time';
 
 const profiles = getProfileNames();
 
@@ -177,16 +179,18 @@ const addProfile = async (
   name?: string,
   accessKey?: string,
   secretKey?: string,
+  secretKeyExpiry?: number,
   defaultRegion?: string,
   outputFormat?: string,
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
-  if (name && accessKey && secretKey && defaultRegion && outputFormat) {
+  if (name && accessKey && secretKey && defaultRegion && outputFormat && secretKeyExpiry) {
     const profile: ProfileConfiguration = {
       profileName: name,
       awsAccessKeyId: accessKey,
       awsSecretAccessKey: secretKey,
+      awsSecretAccessKeyExpiry: getExpiryDateInSeconds(secretKeyExpiry),
       awsDefaultRegion: defaultRegion,
       awsOutputFormat: outputFormat,
       mfaEnabled: false,
@@ -219,6 +223,12 @@ const addProfile = async (
       },
       {
         type: 'input',
+        name: 'secretKeyExpiry',
+        message: 'Secret key expiry in days',
+        default: 90,
+      },
+      {
+        type: 'input',
         name: 'defaultRegion',
         message: 'Default region',
       },
@@ -240,6 +250,7 @@ const addProfile = async (
       profileName: profileAnswers.profile,
       awsAccessKeyId: profileAnswers.accessKey,
       awsSecretAccessKey: profileAnswers.secretKey,
+      awsSecretAccessKeyExpiry: getExpiryDateInSeconds(Number(profileAnswers.secretKeyExpiry)),
       awsDefaultRegion: profileAnswers.defaultRegion,
       awsOutputFormat: profileAnswers.outputFormat,
       mfaEnabled: profileAnswers.useMfa,
@@ -484,6 +495,12 @@ const enableMfa = async (name?: string): Promise<void> => {
     },
     {
       type: 'input',
+      name: 'secretKeyExpiry',
+      message: 'Secret key expiry in days',
+      default: 90,
+    },
+    {
+      type: 'input',
       name: 'defaultRegion',
       message: 'Default region',
       default: selectedProfile.awsDefaultRegion,
@@ -514,6 +531,7 @@ const enableMfa = async (name?: string): Promise<void> => {
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
+    awsSecretAccessKeyExpiry: profileAnswers.secretKeyExpiry,
     awsDefaultRegion: profileAnswers.defaultRegion,
     awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: true,
@@ -589,6 +607,7 @@ const disableMfa = async (name?: string): Promise<void> => {
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
+    awsSecretAccessKeyExpiry: 60,
     awsDefaultRegion: profileAnswers.defaultRegion,
     awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: false,
@@ -645,7 +664,7 @@ const awsx = (): void => {
     })
     .command({
       command:
-        'add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
+        'add-profile [profile] [access-key] [secret-key] [secret-key-expiry] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
       describe: 'Add profile',
       builder: (
         yargs
@@ -671,6 +690,10 @@ const awsx = (): void => {
             type: 'string',
             describe: 'The secret key for the new profile',
           })
+          .positional('secret-key-expiry', {
+            type: 'number',
+            describe: 'The secret key expiry period in days',
+          })
           .positional('default-region', {
             type: 'string',
             describe: 'The default AWS region for the new profile',
@@ -693,6 +716,7 @@ const awsx = (): void => {
         profile?: string;
         accessKey?: string;
         secretKey?: string;
+        secretKeyExpiry?: number;
         defaultRegion?: string;
         outputFormat?: string;
         mfaArn?: string;
@@ -704,6 +728,7 @@ const awsx = (): void => {
             args.profile,
             args.accessKey,
             args.secretKey,
+            args.secretKeyExpiry,
             args.defaultRegion,
             args.outputFormat,
             args.mfaArn,
@@ -865,6 +890,7 @@ const awsx = (): void => {
         }
       },
     })
+    .middleware(checkSecretKeyExpiry)
     .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
     .help().argv;
 };
