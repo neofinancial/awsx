@@ -26,8 +26,7 @@
     "format": "prettier --write \"**/*.{ts,js,json,yaml,yml,md}\"",
     "format:check": "prettier --debug-check \"**/*.{ts,js,json,yaml,yml,md}\"",
     "pre-commit": "lint-staged",
-    "prepublishOnly": "rimraf build && ncc build src/app.ts -o build --minify",
-    "prepare": "husky install"
+    "prepublishOnly": "rimraf build && NODE_ENV=production rollup -c"
   },
   "files": [
     "bin",
