@@ -1,5 +1,5 @@
-import inquirer from 'inquirer';
 import chalk from 'chalk';
+import prompts from 'prompts';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
 
@@ -61,17 +61,21 @@ const switchAssumeRoleProfile = async (
       console.error(chalk.red(`No profile '${assumeRoleProfileName}' found.`));
     }
   } else if (assumeRoleProfiles.length > 0) {
-    const rootProfileOption = 'root profile';
+    const rootProfileOption = { title: 'root profile', value: 'root profile' };
+    const choices = [
+      rootProfileOption,
+      ...assumeRoleProfiles.map((profile) => ({ title: profile, value: profile })),
+    ];
 
-    const answers = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'profile',
-        message: 'Choose an assume role profile',
-        choices: [rootProfileOption, ...assumeRoleProfiles],
-        default: currentProfile || assumeRoleProfiles[0],
-      },
-    ]);
+    const answers = await prompts({
+      type: 'select',
+      name: 'profile',
+      message: 'Choose an assume role profile',
+      choices,
+      initial: choices.findIndex(
+        (choice) => choice.value === currentProfile || choice.value === assumeRoleProfiles[0]
+      ),
+    });
 
     if (answers.profile !== rootProfileOption) {
       exportEnvironmentVariables(answers.profile);
@@ -89,21 +93,18 @@ const switchProfile = async (
   if (profiles.length === 0) {
     console.warn(chalk.yellow(`No profiles are configured, run 'awsx add-profile' first.`));
 
-    return;
+    process.exit(1);
   }
 
   if (name) {
     currentProfile = name;
   } else {
-    const answers = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'profile',
-        message: 'Choose a profile',
-        choices: profiles,
-        default: currentProfile || profiles[0],
-      },
-    ]);
+    const answers = await prompts({
+      type: 'select',
+      name: 'profile',
+      message: 'Choose a profile',
+      choices: profiles.map((profile) => ({ title: profile, value: profile })),
+    });
 
     currentProfile = answers.profile;
   }
@@ -115,7 +116,7 @@ const switchProfile = async (
       chalk.red(`No profile ${currentProfile} found, make sure you run 'awsx add-profile' first.`)
     );
 
-    return;
+    process.exit(1);
   }
 
   if (selectedProfile.mfaEnabled) {
@@ -140,13 +141,11 @@ const switchProfile = async (
       return;
     }
 
-    const mfaAnswer = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'token',
-        message: 'MFA token',
-      },
-    ]);
+    const mfaAnswer = await prompts({
+      type: 'text',
+      name: 'token',
+      message: 'MFA token',
+    });
 
     await getTemporaryCredentials(
       selectedProfile,
@@ -205,39 +204,44 @@ const addProfile = async (
     createProfile(profile);
     console.log(chalk.green(`Added new profile '${name}'`));
   } else {
-    const profileAnswers = await inquirer.prompt([
+    const profileAnswers = await prompts([
       {
-        type: 'input',
+        type: 'text',
         name: 'profile',
         message: 'Name',
       },
       {
-        type: 'input',
+        type: 'text',
         name: 'accessKey',
         message: 'Access key',
       },
       {
-        type: 'input',
+        type: 'text',
         name: 'secretKey',
         message: 'Secret key',
       },
       {
-        type: 'input',
+        type: 'number',
         name: 'secretKeyExpiry',
         message: 'Secret key expiry in days',
-        default: 90,
+        initial: 90,
       },
       {
-        type: 'input',
+        type: 'text',
         name: 'defaultRegion',
         message: 'Default region',
       },
       {
-        type: 'list',
+        type: 'select',
         name: 'outputFormat',
         message: 'Output format',
-        choices: ['json', 'yaml', 'text', 'table'],
-        default: 'json',
+        choices: [
+          { title: 'json', value: 'json' },
+          { title: 'yaml', value: 'yaml' },
+          { title: 'text', value: 'text' },
+          { title: 'table', value: 'table' },
+        ],
+        initial: 1,
       },
       {
         type: 'confirm',
@@ -257,9 +261,9 @@ const addProfile = async (
     };
 
     if (profileAnswers.useMfa) {
-      const mfaAnswers = await inquirer.prompt([
+      const mfaAnswers = await prompts([
         {
-          type: 'input',
+          type: 'text',
           name: 'mfaArn',
           message: 'MFA device ARN',
         },
@@ -267,7 +271,7 @@ const addProfile = async (
           type: 'number',
           name: 'mfaExpiry',
           message: 'MFA token expiry (seconds)',
-          default: 3600,
+          initial: 3600,
           validate: validateMfaExpiry,
         },
       ]);
@@ -287,15 +291,14 @@ const removeProfile = async (name?: string): Promise<void> => {
   if (name) {
     profileName = name;
   } else {
-    const answers = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'profile',
-        message: 'Choose a profile',
-        choices: profiles,
-        default: currentProfile || profiles[0],
-      },
-    ]);
+    const choices = profiles.map((profile) => ({ title: profile, value: profile }));
+    const answers = await prompts({
+      type: 'select',
+      name: 'profile',
+      message: 'Choose a profile',
+      choices: choices,
+      initial: choices.findIndex((choice) => choice.value === currentProfile),
+    });
 
     profileName = answers.profile;
   }
@@ -308,7 +311,7 @@ const removeProfile = async (name?: string): Promise<void> => {
     return;
   }
 
-  const confirmAnswer = await inquirer.prompt([
+  const confirmAnswer = await prompts([
     {
       type: 'confirm',
       name: 'confirm',
@@ -330,15 +333,21 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
   if (name) {
     profileName = name;
   } else {
-    const answers = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'profile',
-        message: 'Choose a profile',
-        choices: assumeRoleProfiles.map((profile) => profile.profileName.replace('profile ', '')),
-        default: currentProfile || assumeRoleProfiles[0],
-      },
-    ]);
+    const choices = assumeRoleProfiles.map((profile) => ({
+      title: profile.profileName.replace('profile ', ''),
+      value: profile.profileName.replace('profile ', ''),
+    }));
+    const answers = await prompts({
+      type: 'list',
+      name: 'profile',
+      message: 'Choose a profile',
+      choices: choices,
+      initial: choices.findIndex(
+        (choice) =>
+          choice.value === currentProfile ||
+          choice.value === assumeRoleProfiles[0].profileName.replace('profile ', '')
+      ),
+    });
 
     profileName = answers.profile;
   }
@@ -351,7 +360,7 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
     return;
   }
 
-  const confirmAnswer = await inquirer.prompt([
+  const confirmAnswer = await prompts([
     {
       type: 'confirm',
       name: 'confirm',
@@ -379,20 +388,20 @@ const addAssumeRoleProfile = async (
     parentProfileName = parentProfile;
     awsRoleArn = roleArn;
   } else {
-    const profileAnswers = await inquirer.prompt([
+    const profileAnswers = await prompts([
       {
-        type: 'input',
+        type: 'text',
         name: 'profile',
         message: 'Name',
       },
       {
-        type: 'list',
+        type: 'select',
         name: 'parentProfile',
         message: 'Choose a parent profile',
-        choices: profiles,
+        choices: profiles.map((profile) => ({ title: profile, value: profile })),
       },
       {
-        type: 'input',
+        type: 'text',
         name: 'roleArn',
         message: 'Role ARN',
       },
@@ -420,19 +429,25 @@ const addAssumeRoleProfile = async (
     return;
   }
 
-  const configAnswers = await inquirer.prompt([
+  const choices = [
+    { title: 'json', value: 'json' },
+    { title: 'yaml', value: 'yaml' },
+    { title: 'text', value: 'text' },
+    { title: 'table', value: 'table' },
+  ];
+  const configAnswers = await prompts([
     {
-      type: 'input',
+      type: 'text',
       name: 'defaultRegion',
       message: 'Default region',
-      default: parent.awsDefaultRegion,
+      initial: parent.awsDefaultRegion,
     },
     {
-      type: 'list',
+      type: 'select',
       name: 'outputFormat',
       message: 'Output format',
-      choices: ['json', 'yaml', 'text', 'table'],
-      default: parent.awsOutputFormat,
+      choices: choices,
+      initial: choices.findIndex((choice) => choice.value === parent.awsOutputFormat),
     },
   ]);
 
@@ -453,15 +468,16 @@ const enableMfa = async (name?: string): Promise<void> => {
   if (name) {
     profileName = name;
   } else {
-    const answers = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'profile',
-        message: 'Choose a profile',
-        choices: profiles,
-        default: currentProfile || profiles[0],
-      },
-    ]);
+    const choices = profiles.map((profile) => ({ title: profile, value: profile }));
+    const answers = await prompts({
+      type: 'select',
+      name: 'profile',
+      message: 'Choose a profile',
+      choices: choices,
+      initial: choices.findIndex(
+        (choice) => choice.value === currentProfile || choice.value === profiles[0]
+      ),
+    });
 
     profileName = answers.profile;
   }
@@ -480,40 +496,46 @@ const enableMfa = async (name?: string): Promise<void> => {
     return;
   }
 
-  const profileAnswers = await inquirer.prompt([
+  const choices = [
+    { title: 'json', value: 'json' },
+    { title: 'yaml', value: 'yaml' },
+    { title: 'text', value: 'text' },
+    { title: 'table', value: 'table' },
+  ];
+  const profileAnswers = await prompts([
     {
-      type: 'input',
+      type: 'text',
       name: 'accessKey',
       message: 'Access key',
-      default: selectedProfile.awsAccessKeyId,
+      initial: selectedProfile.awsAccessKeyId,
     },
     {
-      type: 'input',
+      type: 'text',
       name: 'secretKey',
       message: 'Secret key',
-      default: selectedProfile.awsSecretAccessKey,
+      initial: selectedProfile.awsSecretAccessKey,
     },
     {
-      type: 'input',
+      type: 'number',
       name: 'secretKeyExpiry',
       message: 'Secret key expiry in days',
-      default: 90,
+      initial: 90,
     },
     {
-      type: 'input',
+      type: 'text',
       name: 'defaultRegion',
       message: 'Default region',
-      default: selectedProfile.awsDefaultRegion,
+      initial: selectedProfile.awsDefaultRegion,
     },
     {
-      type: 'list',
+      type: 'select',
       name: 'outputFormat',
       message: 'Output format',
-      choices: ['json', 'yaml', 'text', 'table'],
-      default: selectedProfile.awsOutputFormat || 'json',
+      choices: choices,
+      initial: choices.findIndex((choice) => choice.value === selectedProfile.awsOutputFormat),
     },
     {
-      type: 'input',
+      type: 'text',
       name: 'mfaArn',
       message: 'MFA device ARN',
     },
@@ -521,7 +543,7 @@ const enableMfa = async (name?: string): Promise<void> => {
       type: 'number',
       name: 'mfaExpiry',
       message: 'MFA token expiry (seconds)',
-      default: 3600,
+      initial: 3600,
       validate: validateMfaExpiry,
     },
   ]);
@@ -548,13 +570,16 @@ const disableMfa = async (name?: string): Promise<void> => {
   if (name) {
     profileName = name;
   } else {
-    const answers = await inquirer.prompt([
+    const choices = profiles.map((profile) => ({ title: profile, value: profile }));
+    const answers = await prompts([
       {
-        type: 'list',
+        type: 'select',
         name: 'profile',
         message: 'Choose a profile',
-        choices: profiles,
-        default: currentProfile || profiles[0],
+        choices: choices,
+        initial: choices.findIndex(
+          (choice) => choice.value === currentProfile || choice.value === profiles[0]
+        ),
       },
     ]);
 
@@ -575,30 +600,30 @@ const disableMfa = async (name?: string): Promise<void> => {
     return;
   }
 
-  const profileAnswers = await inquirer.prompt([
+  const profileAnswers = await prompts([
     {
-      type: 'input',
+      type: 'text',
       name: 'accessKey',
       message: 'Access key',
-      default: selectedProfile.awsAccessKeyId,
+      initial: selectedProfile.awsAccessKeyId,
     },
     {
-      type: 'input',
+      type: 'text',
       name: 'secretKey',
       message: 'Secret key',
-      default: selectedProfile.awsSecretAccessKey,
+      initial: selectedProfile.awsSecretAccessKey,
     },
     {
-      type: 'input',
+      type: 'text',
       name: 'defaultRegion',
       message: 'Default region',
-      default: selectedProfile.awsDefaultRegion,
+      initial: selectedProfile.awsDefaultRegion,
     },
     {
-      type: 'input',
+      type: 'text',
       name: 'outputFormat',
       message: 'Output format',
-      default: selectedProfile.awsOutputFormat,
+      initial: selectedProfile.awsOutputFormat,
     },
   ]);
 
