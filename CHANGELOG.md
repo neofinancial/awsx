@@ -1,5 +1,9 @@
 # awsx changelog
 
+## 1.3.1 (December 6, 2021)
+
+- Warn users when secret key X days old
+
 ## 1.2.0 (October 16, 2021)
 
 - Add `whoami` command
