@@ -1,5 +1,5 @@
-import { config, Credentials, STS } from 'aws-sdk';
-import { GetSessionTokenRequest } from 'aws-sdk/clients/sts';
+import chalk from 'chalk';
+import { STS, GetSessionTokenRequest, Credentials } from '@aws-sdk/client-sts';
 
 export interface ProfileConfiguration {
   profileName: string;
@@ -30,12 +30,13 @@ export interface AWSCredentials {
 }
 
 const createStsClient = (configuration: ProfileConfiguration): STS => {
-  config.credentials = new Credentials(
-    configuration.awsAccessKeyId,
-    configuration.awsSecretAccessKey
-  );
-
-  return new STS();
+  return new STS({
+    credentials: {
+      accessKeyId: configuration.awsAccessKeyId,
+      secretAccessKey: configuration.awsSecretAccessKey,
+    },
+    region: configuration.awsDefaultRegion,
+  });
 };
 
 const createStsParameters = (
@@ -51,8 +52,14 @@ const createStsParameters = (
 
 const createTemporaryCredentials = (
   profileName: string,
-  credentials: STS.Credentials
+  credentials: Credentials
 ): AWSCredentials => {
+  if (!credentials.AccessKeyId || !credentials.SecretAccessKey || !credentials.SessionToken) {
+    console.error(chalk.red(`${profileName} temporary credentials are invalid`));
+
+    process.exit(1);
+  }
+
   return {
     profileName: profileName,
     awsAccessKeyId: credentials.AccessKeyId,
@@ -68,9 +75,13 @@ const getTemporaryCredentials = async (
 ): Promise<void> => {
   const stsParameters = createStsParameters(configuration, mfaToken);
 
-  const response = await createStsClient(configuration).getSessionToken(stsParameters).promise();
+  const response = await createStsClient(configuration).getSessionToken(stsParameters);
 
-  if (response.Credentials) {
+  if (
+    response.Credentials?.AccessKeyId &&
+    response.Credentials?.SecretAccessKey &&
+    response.Credentials?.SessionToken
+  ) {
     onLogin(createTemporaryCredentials(configuration.profileName, response.Credentials));
   }
 };

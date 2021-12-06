@@ -1,5 +1,10 @@
 # awsx changelog
 
+## 1.3.0 (December 4, 2021)
+
+- Build with Rollup instead of ncc
+- Upgrade from v2 to v3 of the AWS JavaScript SDK
+
 ## 1.2.0 (October 16, 2021)
 
 - Add `whoami` command

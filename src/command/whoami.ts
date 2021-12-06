@@ -1,7 +1,9 @@
 import chalk from 'chalk';
-import AWS, { STS, IAM } from 'aws-sdk';
+import { STS } from '@aws-sdk/client-sts';
+import { IAM } from '@aws-sdk/client-iam';
 
 import { getCurrentProfile } from '../lib/profile';
+import { getProfile } from '../config';
 import { timeout } from '../lib/time';
 
 const assumedRole = (arn?: string): string | undefined => {
@@ -9,10 +11,23 @@ const assumedRole = (arn?: string): string | undefined => {
 };
 
 const whoami = async (): Promise<void> => {
-  const sts = new STS();
-  const iam = new IAM();
+  const profile = getProfile(getCurrentProfile());
 
-  const identity = await Promise.race([sts.getCallerIdentity().promise(), timeout(1500)]);
+  if (!profile) {
+    console.log(chalk.red('Error loading profile'));
+
+    return;
+  }
+
+  const credentials = {
+    accessKeyId: profile.awsAccessKeyId,
+    secretAccessKey: profile.awsSecretAccessKey,
+  };
+
+  const sts = new STS({ credentials });
+  const iam = new IAM({ credentials });
+
+  const identity = await Promise.race([sts.getCallerIdentity({}), timeout(1500)]);
 
   if (!identity) {
     console.log(chalk.red(`Session is expired or invalid`));
@@ -20,7 +35,7 @@ const whoami = async (): Promise<void> => {
   }
 
   // Should be available if the identity call returns truthy, so shouldn't need a second timed-out race.
-  const aliases = await iam.listAccountAliases().promise();
+  const aliases = await iam.listAccountAliases({});
 
   const whoAmI = {
     Account: identity.Account,
@@ -28,7 +43,7 @@ const whoami = async (): Promise<void> => {
     Arn: identity.Arn,
     AssumedRole: assumedRole(identity.Arn),
     Profile: getCurrentProfile(),
-    Region: AWS.config.region,
+    Region: profile.awsDefaultRegion,
     UserId: identity.UserId,
   };
 
