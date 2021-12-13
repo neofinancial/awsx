@@ -33,8 +33,6 @@ const addKeyExpiry = async (
 
     profileName = answers.profile;
     expiryInDays = answers.period;
-
-    console.log('After prompts: profileName, expiryInDays', profileName, expiryInDays);
   }
 
   const selectedProfile = getProfile(profileName);
