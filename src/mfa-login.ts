@@ -77,9 +77,6 @@ const getTemporaryCredentials = async (
   const stsParameters = createStsParameters(configuration, mfaToken);
 
   const response = await createStsClient(configuration).getSessionToken(stsParameters);
-  const identity = await createStsClient(configuration).getCallerIdentity({});
-
-  console.log(chalk.green(`${identity.Account} - ${identity.UserId} - ${identity.Arn}`));
 
   if (
     response.Credentials?.AccessKeyId &&
