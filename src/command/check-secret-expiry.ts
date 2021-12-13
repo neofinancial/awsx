@@ -54,15 +54,13 @@ const checkSecretKeyExpiry = async (
       return;
     }
 
-    const expiryPeriod = profile.sessionLengthInSeconds || DEFAULT_SECRET_KEY_EXPIRY_DAYS;
+    const expiryPeriod = profile.awsSecretAccessKeyExpiry || DEFAULT_SECRET_KEY_EXPIRY_DAYS;
 
     const [expired, chalkColor] = getExpiryStatus(currentKey.CreateDate, expiryPeriod);
 
     if (expired && chalkColor) {
       console.log(
-        chalkColor(`⚠ Your secret key of profile ${
-          profile.profileName
-        } has expiry period of ${90} days.
+        chalkColor(`⚠ Your secret key of profile ${profile.profileName} has expiry period of ${expiryPeriod} days.
       Secret key status : ${expired}`)
       );
     }
