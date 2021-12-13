@@ -28,7 +28,7 @@ import pkg from '../package.json';
 import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
 import { checkSecretKeyExpiry } from './command/check-secret-expiry';
-import { getExpiryDateInSeconds } from './lib/time';
+import { addKeyExpiry } from './command/add-key-expiry';
 
 const profiles = getProfileNames();
 
@@ -125,6 +125,8 @@ const switchProfile = async (
     if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
       exportEnvironmentVariables(selectedProfile.profileName);
 
+      await checkSecretKeyExpiry(selectedProfile, lastCredentials);
+
       const activeProfile = await switchAssumeRoleProfile(
         selectedProfile.profileName,
         assumeRoleProfileName
@@ -150,9 +152,10 @@ const switchProfile = async (
     await getTemporaryCredentials(
       selectedProfile,
       mfaAnswer.token,
-      (credentials: AWSCredentials): void => {
-        writeTemporaryCredentials(selectedProfile, credentials);
+      async (credentials: AWSCredentials): Promise<void> => {
+        await checkSecretKeyExpiry(selectedProfile, credentials);
 
+        writeTemporaryCredentials(selectedProfile, credentials);
         exportEnvironmentVariables(selectedProfile.profileName);
       }
     );
@@ -189,7 +192,7 @@ const addProfile = async (
       profileName: name,
       awsAccessKeyId: accessKey,
       awsSecretAccessKey: secretKey,
-      awsSecretAccessKeyExpiry: getExpiryDateInSeconds(secretKeyExpiry),
+      awsSecretAccessKeyExpiry: secretKeyExpiry,
       awsDefaultRegion: defaultRegion,
       awsOutputFormat: outputFormat,
       mfaEnabled: false,
@@ -254,7 +257,7 @@ const addProfile = async (
       profileName: profileAnswers.profile,
       awsAccessKeyId: profileAnswers.accessKey,
       awsSecretAccessKey: profileAnswers.secretKey,
-      awsSecretAccessKeyExpiry: getExpiryDateInSeconds(Number(profileAnswers.secretKeyExpiry)),
+      awsSecretAccessKeyExpiry: profileAnswers.secretKeyExpiry,
       awsDefaultRegion: profileAnswers.defaultRegion,
       awsOutputFormat: profileAnswers.outputFormat,
       mfaEnabled: profileAnswers.useMfa,
@@ -516,12 +519,6 @@ const enableMfa = async (name?: string): Promise<void> => {
       initial: selectedProfile.awsSecretAccessKey,
     },
     {
-      type: 'number',
-      name: 'secretKeyExpiry',
-      message: 'Secret key expiry in days',
-      initial: 90,
-    },
-    {
       type: 'text',
       name: 'defaultRegion',
       message: 'Default region',
@@ -553,7 +550,6 @@ const enableMfa = async (name?: string): Promise<void> => {
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
-    awsSecretAccessKeyExpiry: profileAnswers.secretKeyExpiry,
     awsDefaultRegion: profileAnswers.defaultRegion,
     awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: true,
@@ -632,7 +628,6 @@ const disableMfa = async (name?: string): Promise<void> => {
     profileName: profileName,
     awsAccessKeyId: profileAnswers.accessKey,
     awsSecretAccessKey: profileAnswers.secretKey,
-    awsSecretAccessKeyExpiry: 60,
     awsDefaultRegion: profileAnswers.defaultRegion,
     awsOutputFormat: profileAnswers.outputFormat,
     mfaEnabled: false,
@@ -697,6 +692,7 @@ const awsx = (): void => {
         profile?: string;
         'access-key'?: string;
         'secret-key'?: string;
+        'secret-key-expiry'?: number;
         'default-region'?: string;
         'output-format'?: string;
         'mfa-arn'?: string;
@@ -915,7 +911,31 @@ const awsx = (): void => {
         }
       },
     })
-    .middleware(checkSecretKeyExpiry)
+    .command({
+      command: 'add-key-expiry [profile] [expiry-period]',
+      describe: "Add expiry to your profile's secret key",
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs
+          .positional('profile', {
+            type: 'string',
+            describe: 'The name of the profile to add expiry to',
+          })
+          .positional('expiry-period', {
+            type: 'number',
+            describe: 'The expiry period in days',
+          }),
+      handler: async (args: { profile?: string; expiryPeriod?: number }): Promise<void> => {
+        try {
+          await addKeyExpiry(args.profile, args.expiryPeriod);
+        } catch (error) {
+          console.log(chalk.red(error.message));
+        }
+      },
+    })
     .wrap(yargs.terminalWidth() <= 120 ? yargs.terminalWidth() : 120)
     .help().argv;
 };

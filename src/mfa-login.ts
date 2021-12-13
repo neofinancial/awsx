@@ -5,7 +5,7 @@ export interface ProfileConfiguration {
   profileName: string;
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
-  awsSecretAccessKeyExpiry: number;
+  awsSecretAccessKeyExpiry?: number;
   awsDefaultRegion: string;
   awsOutputFormat: string;
   mfaEnabled: boolean;
@@ -72,11 +72,14 @@ const createTemporaryCredentials = (
 const getTemporaryCredentials = async (
   configuration: ProfileConfiguration,
   mfaToken: string,
-  onLogin: (credentials: AWSCredentials) => void
+  onLogin: (credentials: AWSCredentials) => Promise<void>
 ): Promise<void> => {
   const stsParameters = createStsParameters(configuration, mfaToken);
 
   const response = await createStsClient(configuration).getSessionToken(stsParameters);
+  const identity = await createStsClient(configuration).getCallerIdentity({});
+
+  console.log(chalk.green(`${identity.Account} - ${identity.UserId} - ${identity.Arn}`));
 
   if (
     response.Credentials?.AccessKeyId &&

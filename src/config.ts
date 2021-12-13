@@ -269,7 +269,6 @@ export {
   isMfaSessionStillValid,
   getProfileNames,
   getProfile,
-  getProfiles,
   getCredentials,
   writeTemporaryCredentials,
   createProfile,
