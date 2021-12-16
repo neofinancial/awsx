@@ -3,7 +3,7 @@ import prompts from 'prompts';
 
 import { createProfile, deleteProfile, getProfile, getProfileNames } from '../config';
 
-const addKeyExpiry = async (
+const addKeyMaxAge = async (
   name: string | undefined,
   expiryPeriod: number | undefined
 ): Promise<void> => {
@@ -26,8 +26,8 @@ const addKeyExpiry = async (
       {
         type: 'number',
         name: 'period',
-        message: 'Enter expiry period in days',
-        initial: 90,
+        message: 'Enter access key maximum age in days',
+        initial: 0,
       },
     ]);
 
@@ -43,9 +43,11 @@ const addKeyExpiry = async (
     return;
   }
 
-  if (selectedProfile.awsSecretAccessKeyExpiry) {
+  if (selectedProfile.awsAccessKeyMaxAge) {
     console.warn(
-      chalk.yellow(`Profile ${profileName} already has expiry date set, Do you want to update it?.`)
+      chalk.yellow(
+        `Profile '${profileName}' already has AccessKey maximum age set. Do you want to update it?.`
+      )
     );
 
     const choices = ['yes', 'no'].map((answer) => ({ title: answer, value: answer }));
@@ -61,7 +63,7 @@ const addKeyExpiry = async (
 
     if (answers.profile === 'no') {
       console.log(
-        chalk.yellow(`Access key expiry date on profile ${profileName} has not been updated.`)
+        chalk.yellow(`AccessKey maximum age on profile ${profileName} has not been updated.`)
       );
 
       return;
@@ -71,10 +73,10 @@ const addKeyExpiry = async (
   deleteProfile(profileName);
   createProfile({
     ...selectedProfile,
-    awsSecretAccessKeyExpiry: expiryInDays,
+    awsAccessKeyMaxAge: expiryInDays,
   });
 
-  console.log(chalk.green(`Updated access key expiry date on profile '${profileName}'`));
+  console.log(chalk.green(`Updated AccessKey maximum age on profile '${profileName}'`));
 };
 
-export { addKeyExpiry };
+export { addKeyMaxAge };

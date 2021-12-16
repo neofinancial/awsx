@@ -28,7 +28,7 @@ import pkg from '../package.json';
 import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
 import { checkSecretKeyExpiry } from './command/check-secret-expiry';
-import { addKeyExpiry } from './command/add-key-expiry';
+import { addKeyMaxAge } from './command/add-key-max-age';
 
 const profiles = getProfileNames();
 
@@ -181,18 +181,18 @@ const addProfile = async (
   name?: string,
   accessKey?: string,
   secretKey?: string,
-  secretKeyExpiry?: number,
+  keyMaxAge?: number,
   defaultRegion?: string,
   outputFormat?: string,
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
-  if (name && accessKey && secretKey && defaultRegion && outputFormat && secretKeyExpiry) {
+  if (name && accessKey && secretKey && defaultRegion && outputFormat && keyMaxAge) {
     const profile: ProfileConfiguration = {
       profileName: name,
       awsAccessKeyId: accessKey,
       awsSecretAccessKey: secretKey,
-      awsSecretAccessKeyExpiry: secretKeyExpiry,
+      awsAccessKeyMaxAge: keyMaxAge,
       awsDefaultRegion: defaultRegion,
       awsOutputFormat: outputFormat,
       mfaEnabled: false,
@@ -225,7 +225,7 @@ const addProfile = async (
       },
       {
         type: 'number',
-        name: 'secretKeyExpiry',
+        name: 'keyMaxAge',
         message: 'Secret key expiry in days',
         initial: 90,
       },
@@ -257,7 +257,7 @@ const addProfile = async (
       profileName: profileAnswers.profile,
       awsAccessKeyId: profileAnswers.accessKey,
       awsSecretAccessKey: profileAnswers.secretKey,
-      awsSecretAccessKeyExpiry: profileAnswers.secretKeyExpiry,
+      awsAccessKeyMaxAge: profileAnswers.keyMaxAge,
       awsDefaultRegion: profileAnswers.defaultRegion,
       awsOutputFormat: profileAnswers.outputFormat,
       mfaEnabled: profileAnswers.useMfa,
@@ -684,7 +684,7 @@ const awsx = (): void => {
     })
     .command({
       command:
-        'add-profile [profile] [access-key] [secret-key] [secret-key-expiry] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
+        'add-profile [profile] [access-key] [secret-key] [key-max-age] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
       describe: 'Add profile',
       builder: (
         yargs
@@ -692,7 +692,7 @@ const awsx = (): void => {
         profile?: string;
         'access-key'?: string;
         'secret-key'?: string;
-        'secret-key-expiry'?: number;
+        'key-max-age'?: number;
         'default-region'?: string;
         'output-format'?: string;
         'mfa-arn'?: string;
@@ -711,7 +711,7 @@ const awsx = (): void => {
             type: 'string',
             describe: 'The secret key for the new profile',
           })
-          .positional('secret-key-expiry', {
+          .positional('key-max-age', {
             type: 'number',
             describe: 'The secret key expiry period in days',
           })
@@ -737,7 +737,7 @@ const awsx = (): void => {
         profile?: string;
         accessKey?: string;
         secretKey?: string;
-        secretKeyExpiry?: number;
+        keyMaxAge?: number;
         defaultRegion?: string;
         outputFormat?: string;
         mfaArn?: string;
@@ -749,7 +749,7 @@ const awsx = (): void => {
             args.profile,
             args.accessKey,
             args.secretKey,
-            args.secretKeyExpiry,
+            args.keyMaxAge,
             args.defaultRegion,
             args.outputFormat,
             args.mfaArn,
@@ -912,8 +912,8 @@ const awsx = (): void => {
       },
     })
     .command({
-      command: 'add-key-expiry [profile] [expiry-period]',
-      describe: "Add expiry to your profile's secret key",
+      command: 'add-key-max-age [profile] [max-age]',
+      describe: 'Add max age of profile access key in days',
       builder: (
         yargs
       ): Argv<{
@@ -924,13 +924,13 @@ const awsx = (): void => {
             type: 'string',
             describe: 'The name of the profile to add expiry to',
           })
-          .positional('expiry-period', {
+          .positional('max-age', {
             type: 'number',
-            describe: 'The expiry period in days',
+            describe: 'Maximum age of access key in days',
           }),
-      handler: async (args: { profile?: string; expiryPeriod?: number }): Promise<void> => {
+      handler: async (args: { profile?: string; maxAge?: number }): Promise<void> => {
         try {
-          await addKeyExpiry(args.profile, args.expiryPeriod);
+          await addKeyMaxAge(args.profile, args.maxAge);
         } catch (error) {
           console.log(chalk.red(error.message));
         }

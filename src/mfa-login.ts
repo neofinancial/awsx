@@ -5,7 +5,7 @@ export interface ProfileConfiguration {
   profileName: string;
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
-  awsSecretAccessKeyExpiry?: number;
+  awsAccessKeyMaxAge?: number;
   awsDefaultRegion: string;
   awsOutputFormat: string;
   mfaEnabled: boolean;
@@ -83,7 +83,7 @@ const getTemporaryCredentials = async (
     response.Credentials?.SecretAccessKey &&
     response.Credentials?.SessionToken
   ) {
-    onLogin(createTemporaryCredentials(configuration.profileName, response.Credentials));
+    await onLogin(createTemporaryCredentials(configuration.profileName, response.Credentials));
   }
 };
 

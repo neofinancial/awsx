@@ -3,29 +3,47 @@ import chalk from 'chalk';
 
 import { AWSCredentials, ProfileConfiguration } from '../mfa-login';
 
-import { DEFAULT_SECRET_KEY_EXPIRY_DAYS, getDaysAfterCreated } from '../lib/time';
+import { getKeyAgeInDays } from '../lib/time';
 import { createIAMClient, createStsClient } from '../lib/create-aws-client';
 
 const getExpiryStatus = (
   dateCreated: Date,
-  expiryInDays: number
-): [string | undefined, chalk.Chalk | undefined] => {
-  const days = getDaysAfterCreated(dateCreated.getTime());
+  maxAge: number | undefined
+): { text: string; textColor: chalk.Chalk } | undefined => {
+  let textColor;
+  const keyAge = getKeyAgeInDays(dateCreated.getTime());
 
-  let expiryText;
-  let chalkColor;
+  if (maxAge) {
+    const daysLeft = maxAge - keyAge;
 
-  const daysLeft = expiryInDays - days;
+    if (daysLeft < 0) {
+      return { text: `✘ has expired`, textColor: chalk.red };
+    } else if ([0, 1].includes(daysLeft)) {
+      return {
+        text: `${daysLeft === 1 ? '⚠ expires tomorrow' : '⚠ expires today'}`,
+        textColor: chalk.yellow,
+      };
+    } else if (daysLeft < 7) {
+      return { text: `⚠ expires in ${daysLeft} days`, textColor: chalk.yellow };
+    } else if (daysLeft < 30) {
+      return {
+        text: `✓ expires in ${keyAge} days`,
+        textColor: chalk.green,
+      };
+    } else return;
+  } else {
+    if (keyAge < 10) return;
 
-  if ([0, 1].includes(daysLeft)) {
-    expiryText = daysLeft === 1 ? 'expires tomorrow' : 'expires today';
-    chalkColor = chalk.yellow;
-  } else if (daysLeft < 0) {
-    expiryText = 'has expired ✘';
-    chalkColor = chalk.red;
+    if (keyAge > 180) {
+      textColor = chalk.red;
+    } else if (keyAge > 20) {
+      textColor = chalk.yellow;
+    } else {
+      textColor = chalk.green;
+    }
+
+    return { text: `${keyAge}`, textColor };
   }
-
-  return [expiryText, chalkColor];
 };
 
 const getUserName = (arn?: string): string | undefined => {
@@ -37,6 +55,10 @@ const checkSecretKeyExpiry = async (
   credentials: AWSCredentials
 ): Promise<void> => {
   try {
+    if (profile.awsAccessKeyMaxAge === 0) {
+      return;
+    }
+
     let userName = getUserName(profile.mfaDeviceArn);
 
     userName = userName
@@ -54,20 +76,32 @@ const checkSecretKeyExpiry = async (
       return;
     }
 
-    const expiryPeriod = profile.awsSecretAccessKeyExpiry || DEFAULT_SECRET_KEY_EXPIRY_DAYS;
+    const keyMaxAge = profile.awsAccessKeyMaxAge;
+    const expiryStatus = getExpiryStatus(currentKey.CreateDate, keyMaxAge);
 
-    const [expired, chalkColor] = getExpiryStatus(currentKey.CreateDate, expiryPeriod);
-
-    if (expired && chalkColor) {
+    if (keyMaxAge && expiryStatus?.text) {
       console.log(
-        chalkColor(`⚠ Your secret key of profile ${profile.profileName} has expiry period of ${expiryPeriod} days.
-      Secret key status : ${expired}`)
+        expiryStatus.textColor(`Your AccessKey of profile ${profile.profileName} has expiry period of ${keyMaxAge} days.
+      AccessKey status : ${expiryStatus.text}`)
       );
+    } else if (expiryStatus?.text) {
+      console.log(
+        expiryStatus.textColor(
+          `Your AccessKey of profile ${profile.profileName} is ${expiryStatus.text} days old.`
+        )
+      );
+    } else {
+      return;
     }
-  } catch (error) {
+
     console.log(
-      chalk.red(`Couldn't get the keys of profile ${profile.profileName}: ${error.message}`)
+      chalk.blue(
+        `ⓘ To turn off this notification, please set AccessKey maximum age to 0 in your profile:
+  Usage : 'add-key-max-age [profile] 0'`
+      )
     );
+  } catch {
+    return;
   }
 };
 
