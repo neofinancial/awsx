@@ -3,7 +3,7 @@ import prompts from 'prompts';
 
 import { createProfile, deleteProfile, getProfile, getProfileNames } from '../config';
 
-const addKeyMaxAge = async (
+const setKeyMaxAge = async (
   name: string | undefined,
   expiryPeriod: number | undefined
 ): Promise<void> => {
@@ -26,7 +26,7 @@ const addKeyMaxAge = async (
       {
         type: 'number',
         name: 'period',
-        message: 'Enter access key maximum age in days',
+        message: 'Access key maximum age in days (use 0 for no maximum age)',
         initial: 0,
       },
     ]);
@@ -79,4 +79,4 @@ const addKeyMaxAge = async (
   console.log(chalk.green(`Updated AccessKey maximum age on profile '${profileName}'`));
 };
 
-export { addKeyMaxAge };
+export { setKeyMaxAge };

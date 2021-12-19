@@ -28,7 +28,7 @@ import pkg from '../package.json';
 import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
 import { checkSecretKeyExpiry } from './command/check-secret-expiry';
-import { addKeyMaxAge } from './command/add-key-max-age';
+import { setKeyMaxAge } from './command/set-key-max-age';
 
 const profiles = getProfileNames();
 
@@ -912,8 +912,8 @@ const awsx = (): void => {
       },
     })
     .command({
-      command: 'add-key-max-age [profile] [max-age]',
-      describe: 'Add max age of profile access key in days',
+      command: 'set-key-max-age [profile] [max-age]',
+      describe: 'Set maximum age of AWS access key in days',
       builder: (
         yargs
       ): Argv<{
@@ -930,7 +930,7 @@ const awsx = (): void => {
           }),
       handler: async (args: { profile?: string; maxAge?: number }): Promise<void> => {
         try {
-          await addKeyMaxAge(args.profile, args.maxAge);
+          await setKeyMaxAge(args.profile, args.maxAge);
         } catch (error) {
           console.log(chalk.red(error.message));
         }
