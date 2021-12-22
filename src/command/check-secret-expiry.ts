@@ -13,14 +13,18 @@ const getKeyAgeStatus = (
   const daysLeft = keyMaxAge - keyAge;
 
   if (daysLeft < 0) {
-    return { text: `✘ maximum age is exceeded`, textColor: chalk.red };
+    return { text: `✘ maximum age has exceeded`, textColor: chalk.red };
   } else if ([0, 1].includes(daysLeft)) {
     return {
-      text: `${daysLeft === 1 ? '⚠ maximum age exceeds tomorrow' : '⚠ maximum age exceeds today'}`,
+      text: `${
+        daysLeft === 1
+          ? '⚠ maximum age will be reached tomorrow'
+          : '⚠ maximum age has been reached today'
+      }`,
       textColor: chalk.yellow,
     };
   } else if (daysLeft < 7) {
-    return { text: `⚠ maximum age exceeds in ${daysLeft} days`, textColor: chalk.yellow };
+    return { text: `⚠ maximum age will be reached in ${daysLeft} days`, textColor: chalk.yellow };
   } else if (daysLeft < 30) {
     return {
       text: `✓ maximum age exceeds in ${keyAge} days`,
@@ -81,7 +85,8 @@ const checkSecretKeyExpiry = async (
 
       console.log(
         status.textColor(`Maximum AccessKey age of profile ${profile.profileName} is set to ${keyMaxAge} days.
-        AccessKey status : ${status}`)
+AccessKey status : ${status.text}
+`)
       );
     } else {
       const textColor = getTextColor(keyAge);
@@ -95,8 +100,9 @@ const checkSecretKeyExpiry = async (
 
     console.log(
       chalk.blue(
-        `ⓘ To turn off this notification, please set AccessKey maximum age to 0 in your profile:
-  Usage : 'add-key-max-age [profile] 0'`
+        `ⓘ  To turn off this notification, please set AccessKey maximum age to 0 in your profile:
+Usage : 'set-key-max-age [profile] 0'
+`
       )
     );
   } catch {
