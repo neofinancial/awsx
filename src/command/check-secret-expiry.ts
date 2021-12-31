@@ -6,42 +6,45 @@ import { AWSCredentials, ProfileConfiguration } from '../mfa-login';
 import { getKeyAgeInDays } from '../lib/time';
 import { createIAMClient, createStsClient } from '../lib/create-aws-client';
 
-const getKeyAgeStatus = (
-  keyAge: number,
-  keyMaxAge: number
-): { text: string; textColor: chalk.Chalk } | undefined => {
+const getKeyAgeMessage = (keyAge: number, keyMaxAge?: number): string => {
+  return keyMaxAge
+    ? `Access key is ${keyAge} days old (maximum age is ${keyMaxAge} days)`
+    : `Access key is ${keyAge} days old`;
+};
+
+const printKeyMaxAgeMessage = (keyAge: number, keyMaxAge: number): void => {
   const daysLeft = keyMaxAge - keyAge;
 
   if (daysLeft < 0) {
-    return { text: `✘ maximum age has exceeded`, textColor: chalk.red };
-  } else if ([0, 1].includes(daysLeft)) {
-    return {
-      text: `${
-        daysLeft === 1
-          ? '⚠ maximum age will be reached tomorrow'
-          : '⚠ maximum age has been reached today'
-      }`,
-      textColor: chalk.yellow,
-    };
+    console.log(chalk.red(`✘ ${getKeyAgeMessage(keyAge, keyMaxAge)}`));
+
+    return;
   } else if (daysLeft < 7) {
-    return { text: `⚠ maximum age will be reached in ${daysLeft} days`, textColor: chalk.yellow };
+    console.log(chalk.yellow(`⚠ ${getKeyAgeMessage(keyAge, keyMaxAge)}`));
+
+    return;
   } else if (daysLeft < 30) {
-    return {
-      text: `✓ maximum age exceeds in ${keyAge} days`,
-      textColor: chalk.green,
-    };
-  } else return;
+    console.log(chalk.blue(` ⓘ ${getKeyAgeMessage(keyAge, keyMaxAge)}`));
+
+    return;
+  } else {
+    return;
+  }
 };
 
-const getTextColor = (keyAge: number): chalk.Chalk | undefined => {
+const printKeyAgeMessage = (keyAge: number): void => {
   if (keyAge < 10) return;
 
   if (keyAge > 180) {
-    return chalk.red;
-  } else if (keyAge > 20) {
-    return chalk.yellow;
+    console.log(chalk.red(getKeyAgeMessage(keyAge)));
+
+    return;
+  } else if (keyAge > 90) {
+    console.log(chalk.yellow(getKeyAgeMessage(keyAge)));
+
+    return;
   } else {
-    return chalk.green;
+    console.log(chalk.blue(getKeyAgeMessage(keyAge)));
   }
 };
 
@@ -49,7 +52,7 @@ const getUserName = (arn?: string): string | undefined => {
   return arn ? arn.split('/')[1] : undefined;
 };
 
-const checkSecretKeyExpiry = async (
+const checkSecretKeyAge = async (
   profile: ProfileConfiguration,
   credentials: AWSCredentials
 ): Promise<void> => {
@@ -79,35 +82,21 @@ const checkSecretKeyExpiry = async (
     const keyAge = getKeyAgeInDays(currentKey.CreateDate.getTime());
 
     if (keyMaxAge) {
-      const status = getKeyAgeStatus(keyAge, keyMaxAge);
-
-      if (!status) return;
-
-      console.log(
-        status.textColor(`Maximum AccessKey age of profile ${profile.profileName} is set to ${keyMaxAge} days.
-AccessKey status : ${status.text}
-`)
-      );
+      printKeyMaxAgeMessage(keyAge, keyMaxAge);
+      console.log();
     } else {
-      const textColor = getTextColor(keyAge);
-
-      if (!textColor) return;
+      printKeyAgeMessage(keyAge);
 
       console.log(
-        textColor(`Your AccessKey of profile ${profile.profileName} is ${keyAge} days old.`)
+        chalk.blue(
+          `Change this setting with 'awsx set-key-max-age [profile] <days>' (use 0 days for no maximum age)`
+        )
       );
+      console.log();
     }
-
-    console.log(
-      chalk.blue(
-        `ⓘ  To turn off this notification, please set AccessKey maximum age to 0 in your profile:
-Usage : 'set-key-max-age [profile] 0'
-`
-      )
-    );
   } catch {
     return;
   }
 };
 
-export { checkSecretKeyExpiry };
+export { checkSecretKeyAge };

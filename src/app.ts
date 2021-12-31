@@ -27,7 +27,7 @@ import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
 import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
-import { checkSecretKeyExpiry } from './command/check-secret-expiry';
+import { checkSecretKeyAge } from './command/check-secret-expiry';
 import { setKeyMaxAge } from './command/set-key-max-age';
 
 const profiles = getProfileNames();
@@ -125,7 +125,7 @@ const switchProfile = async (
     if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
       exportEnvironmentVariables(selectedProfile.profileName);
 
-      await checkSecretKeyExpiry(selectedProfile, lastCredentials);
+      await checkSecretKeyAge(selectedProfile, lastCredentials);
 
       const activeProfile = await switchAssumeRoleProfile(
         selectedProfile.profileName,
@@ -153,7 +153,7 @@ const switchProfile = async (
       selectedProfile,
       mfaAnswer.token,
       async (credentials: AWSCredentials): Promise<void> => {
-        await checkSecretKeyExpiry(selectedProfile, credentials);
+        await checkSecretKeyAge(selectedProfile, credentials);
 
         writeTemporaryCredentials(selectedProfile, credentials);
         exportEnvironmentVariables(selectedProfile.profileName);
@@ -226,7 +226,7 @@ const addProfile = async (
       {
         type: 'number',
         name: 'keyMaxAge',
-        message: 'Secret key expiry in days',
+        message: 'Secret key maximum age in days',
         initial: 90,
       },
       {
@@ -713,7 +713,7 @@ const awsx = (): void => {
           })
           .positional('key-max-age', {
             type: 'number',
-            describe: 'The secret key expiry period in days',
+            describe: 'The secret key maximum age in days',
           })
           .positional('default-region', {
             type: 'string',
