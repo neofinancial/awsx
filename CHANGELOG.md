@@ -1,6 +1,6 @@
 # awsx changelog
 
-## 1.4.0 (December 20, 2021)
+## 1.4.0 (January 4, 2022)
 
 - Warn users when secret key X days old
 
