@@ -27,6 +27,8 @@ import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
 import { getCurrentProfile } from './lib/profile';
 import { whoami } from './command/whoami';
+import { checkSecretKeyAge } from './command/check-secret-expiry';
+import { setKeyMaxAge } from './command/set-key-max-age';
 
 const profiles = getProfileNames();
 
@@ -123,6 +125,8 @@ const switchProfile = async (
     if (!forceMFA && lastCredentials && selectedProfile.mfaSessionValid) {
       exportEnvironmentVariables(selectedProfile.profileName);
 
+      await checkSecretKeyAge(selectedProfile, lastCredentials);
+
       const activeProfile = await switchAssumeRoleProfile(
         selectedProfile.profileName,
         assumeRoleProfileName
@@ -148,9 +152,10 @@ const switchProfile = async (
     await getTemporaryCredentials(
       selectedProfile,
       mfaAnswer.token,
-      (credentials: AWSCredentials): void => {
-        writeTemporaryCredentials(selectedProfile, credentials);
+      async (credentials: AWSCredentials): Promise<void> => {
+        await checkSecretKeyAge(selectedProfile, credentials);
 
+        writeTemporaryCredentials(selectedProfile, credentials);
         exportEnvironmentVariables(selectedProfile.profileName);
       }
     );
@@ -176,16 +181,18 @@ const addProfile = async (
   name?: string,
   accessKey?: string,
   secretKey?: string,
+  keyMaxAge?: number,
   defaultRegion?: string,
   outputFormat?: string,
   mfaArn?: string,
   mfaExpiry?: number
 ): Promise<void> => {
-  if (name && accessKey && secretKey && defaultRegion && outputFormat) {
+  if (name && accessKey && secretKey && defaultRegion && outputFormat && keyMaxAge) {
     const profile: ProfileConfiguration = {
       profileName: name,
       awsAccessKeyId: accessKey,
       awsSecretAccessKey: secretKey,
+      awsAccessKeyMaxAge: keyMaxAge,
       awsDefaultRegion: defaultRegion,
       awsOutputFormat: outputFormat,
       mfaEnabled: false,
@@ -217,6 +224,12 @@ const addProfile = async (
         message: 'Secret key',
       },
       {
+        type: 'number',
+        name: 'keyMaxAge',
+        message: 'Secret key maximum age in days',
+        initial: 90,
+      },
+      {
         type: 'text',
         name: 'defaultRegion',
         message: 'Default region',
@@ -244,6 +257,7 @@ const addProfile = async (
       profileName: profileAnswers.profile,
       awsAccessKeyId: profileAnswers.accessKey,
       awsSecretAccessKey: profileAnswers.secretKey,
+      awsAccessKeyMaxAge: profileAnswers.keyMaxAge,
       awsDefaultRegion: profileAnswers.defaultRegion,
       awsOutputFormat: profileAnswers.outputFormat,
       mfaEnabled: profileAnswers.useMfa,
@@ -670,7 +684,7 @@ const awsx = (): void => {
     })
     .command({
       command:
-        'add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
+        'add-profile [profile] [access-key] [secret-key] [key-max-age] [default-region] [output-format] [mfa-arn] [mfa-expiry]',
       describe: 'Add profile',
       builder: (
         yargs
@@ -678,6 +692,7 @@ const awsx = (): void => {
         profile?: string;
         'access-key'?: string;
         'secret-key'?: string;
+        'key-max-age'?: number;
         'default-region'?: string;
         'output-format'?: string;
         'mfa-arn'?: string;
@@ -695,6 +710,10 @@ const awsx = (): void => {
           .positional('secret-key', {
             type: 'string',
             describe: 'The secret key for the new profile',
+          })
+          .positional('key-max-age', {
+            type: 'number',
+            describe: 'The secret key maximum age in days',
           })
           .positional('default-region', {
             type: 'string',
@@ -718,6 +737,7 @@ const awsx = (): void => {
         profile?: string;
         accessKey?: string;
         secretKey?: string;
+        keyMaxAge?: number;
         defaultRegion?: string;
         outputFormat?: string;
         mfaArn?: string;
@@ -729,6 +749,7 @@ const awsx = (): void => {
             args.profile,
             args.accessKey,
             args.secretKey,
+            args.keyMaxAge,
             args.defaultRegion,
             args.outputFormat,
             args.mfaArn,
@@ -885,6 +906,31 @@ const awsx = (): void => {
       handler: async (): Promise<void> => {
         try {
           await whoami();
+        } catch (error) {
+          console.log(chalk.red(error.message));
+        }
+      },
+    })
+    .command({
+      command: 'set-key-max-age [profile] [max-age]',
+      describe: 'Set maximum age of AWS access key in days',
+      builder: (
+        yargs
+      ): Argv<{
+        profile?: string;
+      }> =>
+        yargs
+          .positional('profile', {
+            type: 'string',
+            describe: 'The name of the profile to add expiry to',
+          })
+          .positional('max-age', {
+            type: 'number',
+            describe: 'Maximum age of access key in days',
+          }),
+      handler: async (args: { profile?: string; maxAge?: number }): Promise<void> => {
+        try {
+          await setKeyMaxAge(args.profile, args.maxAge);
         } catch (error) {
           console.log(chalk.red(error.message));
         }

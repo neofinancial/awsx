@@ -44,7 +44,7 @@ If you don't specify a profile name (or an assume role profile name, if applicab
 
 ### Adding a new profile
 
-#### `awsx add-profile [profile] [access-key] [secret-key] [default-region] [output-format] [mfa-arn] [mfa-expiry]`
+#### `awsx add-profile [profile] [access-key] [secret-key] [key-max-age] [default-region] [output-format] [mfa-arn] [mfa-expiry]`
 
 > NOTE: If you don't provide inputs you will be prompted for them.
 
@@ -81,6 +81,12 @@ If you don't have MFA set up on your AWS account you can enable it by following 
 ### Show what AWS account and identity you're using
 
 #### `awsx whoami` or `awsx status`
+
+### Set access key maximum age
+
+#### `awsx set-key-max-age [profile] [max-age]`
+
+> NOTE: use 0 days for no maximum age
 
 ## Contributing
 

@@ -1,5 +1,9 @@
 # awsx changelog
 
+## 1.4.0 (January 4, 2022)
+
+- Warn users when secret key X days old
+
 ## 1.3.0 (December 4, 2021)
 
 - Build with Rollup instead of ncc
