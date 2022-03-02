@@ -37,7 +37,7 @@ jobs:
       - name: Coverage
         uses: neofinancial/coverage-upload-action@v1
         with:
-          coverageEndpoint: https://coverage.neotools.ca/api/coverage
+          coverageEndpoint: $${{secrets.COVERAGE_ENDPOINT}}
           coverageToken: ${{secrets.COVERAGE_TOKEN}}
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
