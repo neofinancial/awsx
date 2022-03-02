@@ -1,6 +1,11 @@
 name: CI
 
-on: [push]
+on:
+  pull_request:
+    types: ['opened', 'reopened', 'synchronize']
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -29,3 +34,10 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           token: ${{secrets.CODECOV_TOKEN}}
+      - name: Coverage
+        uses: neofinancial/coverage-upload-action@v1
+        with:
+          coverageEndpoint: https://coverage.neotools.ca/api/coverage
+          coverageToken: ${{secrets.COVERAGE_TOKEN}}
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
