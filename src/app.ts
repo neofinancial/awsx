@@ -61,7 +61,7 @@ const switchAssumeRoleProfile = async (
       console.error(chalk.red(`No profile '${assumeRoleProfileName}' found.`));
     }
   } else if (assumeRoleProfiles.length > 0) {
-    const rootProfileOption = { title: 'root profile', value: 'root profile' };
+    const rootProfileOption = { title: 'root profile', value: parentProfileName };
     const choices = [
       rootProfileOption,
       ...assumeRoleProfiles.map((profile) => ({ title: profile, value: profile })),
