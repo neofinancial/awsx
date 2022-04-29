@@ -1,6 +1,7 @@
 # awsx
 
 [![Build status](https://github.com/neofinancial/awsx/workflows/CI/badge.svg)](https://github.com/neofinancial/awsx/actions)
+[![coverage](https://coverage.neotools.ca/api/badge/master/8LyR37NYnCX435oEgidAJ3)](https://coverage.neotools.ca/coverage/neofinancial/awsx)
 [![codecov](https://codecov.io/gh/neofinancial/awsx/branch/master/graph/badge.svg)](https://codecov.io/gh/neofinancial/awsx)
 ![TypeScript 3.7.5](https://img.shields.io/badge/TypeScript-3.7.5-brightgreen.svg)
 
