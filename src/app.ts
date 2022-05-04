@@ -25,7 +25,7 @@ import getTemporaryCredentials, {
 } from './mfa-login';
 import exportEnvironmentVariables from './exporter';
 import pkg from '../package.json';
-import { getCurrentProfile } from './lib/profile';
+import { getCurrentProfile, verifyAndGetCallerIdentity } from './lib/profile';
 import { whoami } from './command/whoami';
 import { checkSecretKeyAge } from './command/check-secret-expiry';
 import { setKeyMaxAge } from './command/set-key-max-age';
@@ -190,10 +190,10 @@ const addProfile = async (
   if (name && accessKey && secretKey && defaultRegion && outputFormat && keyMaxAge) {
     const profile: ProfileConfiguration = {
       profileName: name,
-      awsAccessKeyId: accessKey,
-      awsSecretAccessKey: secretKey,
+      awsAccessKeyId: accessKey.trim(),
+      awsSecretAccessKey: secretKey.trim(),
       awsAccessKeyMaxAge: keyMaxAge,
-      awsDefaultRegion: defaultRegion,
+      awsDefaultRegion: defaultRegion.trim(),
       awsOutputFormat: outputFormat,
       mfaEnabled: false,
     };
@@ -253,12 +253,17 @@ const addProfile = async (
       },
     ]);
 
+    await verifyAndGetCallerIdentity({
+      AccessKeyId: profileAnswers.accessKey.trim(),
+      SecretAccessKey: profileAnswers.secretKey.trim(),
+    });
+
     const profile: ProfileConfiguration = {
       profileName: profileAnswers.profile,
-      awsAccessKeyId: profileAnswers.accessKey,
-      awsSecretAccessKey: profileAnswers.secretKey,
+      awsAccessKeyId: profileAnswers.accessKey.trim(),
+      awsSecretAccessKey: profileAnswers.secretKey.trim(),
       awsAccessKeyMaxAge: profileAnswers.keyMaxAge,
-      awsDefaultRegion: profileAnswers.defaultRegion,
+      awsDefaultRegion: profileAnswers.defaultRegion.trim(),
       awsOutputFormat: profileAnswers.outputFormat,
       mfaEnabled: profileAnswers.useMfa,
     };
@@ -269,6 +274,8 @@ const addProfile = async (
           type: 'text',
           name: 'mfaArn',
           message: 'MFA device ARN',
+          validate: (mfaArn: string): boolean | string =>
+            mfaArn ? true : 'MFA device ARN is required',
         },
         {
           type: 'number',
