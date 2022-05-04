@@ -1,10 +1,8 @@
 import chalk from 'chalk';
-// import { STS } from '@aws-sdk/client-sts';
 import { IAM } from '@aws-sdk/client-iam';
 
 import { getCurrentProfile, verifyAndGetCallerIdentity } from '../lib/profile';
 import { getAssumeRoleProfile } from '../config';
-// import { timeout } from '../lib/time';
 
 const assumedRole = (arn?: string): string | undefined => {
   return arn ? arn.split('/')[1] : undefined;
