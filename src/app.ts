@@ -3,6 +3,8 @@ import prompts from 'prompts';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
 
+import { onCancel } from './lib/prompts-helper';
+
 import {
   configFileCheck,
   backupConfig,
@@ -67,15 +69,18 @@ const switchAssumeRoleProfile = async (
       ...assumeRoleProfiles.map((profile) => ({ title: profile, value: profile })),
     ];
 
-    const answers = await prompts({
-      type: 'select',
-      name: 'profile',
-      message: 'Choose an assume role profile',
-      choices,
-      initial: choices.findIndex(
-        (choice) => choice.value === currentProfile || choice.value === assumeRoleProfiles[0]
-      ),
-    });
+    const answers = await prompts(
+      {
+        type: 'select',
+        name: 'profile',
+        message: 'Choose an assume role profile',
+        choices,
+        initial: choices.findIndex(
+          (choice) => choice.value === currentProfile || choice.value === assumeRoleProfiles[0]
+        ),
+      },
+      { onCancel: () => onCancel('Aborting [choose-assume-role] profile') }
+    );
 
     if (answers.profile !== rootProfileOption) {
       exportEnvironmentVariables(answers.profile);
@@ -207,51 +212,54 @@ const addProfile = async (
     createProfile(profile);
     console.log(chalk.green(`Added new profile '${name}'`));
   } else {
-    const profileAnswers = await prompts([
-      {
-        type: 'text',
-        name: 'profile',
-        message: 'Name',
-      },
-      {
-        type: 'text',
-        name: 'accessKey',
-        message: 'Access key',
-      },
-      {
-        type: 'text',
-        name: 'secretKey',
-        message: 'Secret key',
-      },
-      {
-        type: 'number',
-        name: 'keyMaxAge',
-        message: 'Secret key maximum age in days',
-        initial: 90,
-      },
-      {
-        type: 'text',
-        name: 'defaultRegion',
-        message: 'Default region',
-      },
-      {
-        type: 'select',
-        name: 'outputFormat',
-        message: 'Output format',
-        choices: [
-          { title: 'json', value: 'json' },
-          { title: 'yaml', value: 'yaml' },
-          { title: 'text', value: 'text' },
-          { title: 'table', value: 'table' },
-        ],
-        initial: 1,
-      },
-      {
-        type: 'confirm',
-        name: 'useMfa',
-        message: 'Use MFA',
-      },
-    ]);
+    const profileAnswers = await prompts(
+      [
+        {
+          type: 'text',
+          name: 'profile',
+          message: 'Name',
+        },
+        {
+          type: 'text',
+          name: 'accessKey',
+          message: 'Access key',
+        },
+        {
+          type: 'text',
+          name: 'secretKey',
+          message: 'Secret key',
+        },
+        {
+          type: 'number',
+          name: 'keyMaxAge',
+          message: 'Secret key maximum age in days',
+          initial: 90,
+        },
+        {
+          type: 'text',
+          name: 'defaultRegion',
+          message: 'Default region',
+        },
+        {
+          type: 'select',
+          name: 'outputFormat',
+          message: 'Output format',
+          choices: [
+            { title: 'json', value: 'json' },
+            { title: 'yaml', value: 'yaml' },
+            { title: 'text', value: 'text' },
+            { title: 'table', value: 'table' },
+          ],
+          initial: 1,
+        },
+        {
+          type: 'confirm',
+          name: 'useMfa',
+          message: 'Use MFA',
+        },
+      ],
+      { onCancel: () => onCancel('Aborting [add-profile]') }
+    );
 
     await verifyAndGetCallerIdentity({
       AccessKeyId: profileAnswers.accessKey.trim(),
@@ -269,22 +277,25 @@ const addProfile = async (
     };
 
     if (profileAnswers.useMfa) {
-      const mfaAnswers = await prompts([
-        {
-          type: 'text',
-          name: 'mfaArn',
-          message: 'MFA device ARN',
-          validate: (mfaArn: string): boolean | string =>
-            mfaArn ? true : 'MFA device ARN is required',
-        },
-        {
-          type: 'number',
-          name: 'mfaExpiry',
-          message: 'MFA token expiry (seconds)',
-          initial: 3600,
-          validate: validateMfaExpiry,
-        },
-      ]);
+      const mfaAnswers = await prompts(
+        [
+          {
+            type: 'text',
+            name: 'mfaArn',
+            message: 'MFA device ARN',
+            validate: (mfaArn: string): boolean | string =>
+              mfaArn ? true : 'MFA device ARN is required',
+          },
+          {
+            type: 'number',
+            name: 'mfaExpiry',
+            message: 'MFA token expiry (seconds)',
+            initial: 3600,
+            validate: validateMfaExpiry,
+          },
+        ],
+        { onCancel: () => onCancel('Aborting [add-profile]') }
+      );
 
       profile.mfaDeviceArn = mfaAnswers.mfaArn;
       profile.sessionLengthInSeconds = mfaAnswers.mfaExpiry;
@@ -302,13 +313,16 @@ const removeProfile = async (name?: string): Promise<void> => {
     profileName = name;
   } else {
     const choices = profiles.map((profile) => ({ title: profile, value: profile }));
-    const answers = await prompts({
-      type: 'select',
-      name: 'profile',
-      message: 'Choose a profile',
-      choices: choices,
-      initial: choices.findIndex((choice) => choice.value === currentProfile),
-    });
+    const answers = await prompts(
+      {
+        type: 'select',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: choices,
+        initial: choices.findIndex((choice) => choice.value === currentProfile),
+      },
+      { onCancel: () => onCancel('Aborting [remove-profile]') }
+    );
 
     profileName = answers.profile;
   }
@@ -347,17 +361,20 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
       title: profile.profileName.replace('profile ', ''),
       value: profile.profileName.replace('profile ', ''),
     }));
-    const answers = await prompts({
-      type: 'list',
-      name: 'profile',
-      message: 'Choose a profile',
-      choices: choices,
-      initial: choices.findIndex(
-        (choice) =>
-          choice.value === currentProfile ||
-          choice.value === assumeRoleProfiles[0].profileName.replace('profile ', '')
-      ),
-    });
+    const answers = await prompts(
+      {
+        type: 'list',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: choices,
+        initial: choices.findIndex(
+          (choice) =>
+            choice.value === currentProfile ||
+            choice.value === assumeRoleProfiles[0].profileName.replace('profile ', '')
+        ),
+      },
+      { onCancel: () => onCancel('Aborting [remove-assume-profile]') }
+    );
 
     profileName = answers.profile;
   }
@@ -479,15 +496,18 @@ const enableMfa = async (name?: string): Promise<void> => {
     profileName = name;
   } else {
     const choices = profiles.map((profile) => ({ title: profile, value: profile }));
-    const answers = await prompts({
-      type: 'select',
-      name: 'profile',
-      message: 'Choose a profile',
-      choices: choices,
-      initial: choices.findIndex(
-        (choice) => choice.value === currentProfile || choice.value === profiles[0]
-      ),
-    });
+    const answers = await prompts(
+      {
+        type: 'select',
+        name: 'profile',
+        message: 'Choose a profile',
+        choices: choices,
+        initial: choices.findIndex(
+          (choice) => choice.value === currentProfile || choice.value === profiles[0]
+        ),
+      },
+      { onCancel: () => onCancel('Aborting [enable-mfa]') }
+    );
 
     profileName = answers.profile;
   }
@@ -603,32 +623,35 @@ const disableMfa = async (name?: string): Promise<void> => {
     return;
   }
 
-  const profileAnswers = await prompts([
-    {
-      type: 'text',
-      name: 'accessKey',
-      message: 'Access key',
-      initial: selectedProfile.awsAccessKeyId,
-    },
-    {
-      type: 'text',
-      name: 'secretKey',
-      message: 'Secret key',
-      initial: selectedProfile.awsSecretAccessKey,
-    },
-    {
-      type: 'text',
-      name: 'defaultRegion',
-      message: 'Default region',
-      initial: selectedProfile.awsDefaultRegion,
-    },
-    {
-      type: 'text',
-      name: 'outputFormat',
-      message: 'Output format',
-      initial: selectedProfile.awsOutputFormat,
-    },
-  ]);
+  const profileAnswers = await prompts(
+    [
+      {
+        type: 'text',
+        name: 'accessKey',
+        message: 'Access key',
+        initial: selectedProfile.awsAccessKeyId,
+      },
+      {
+        type: 'text',
+        name: 'secretKey',
+        message: 'Secret key',
+        initial: selectedProfile.awsSecretAccessKey,
+      },
+      {
+        type: 'text',
+        name: 'defaultRegion',
+        message: 'Default region',
+        initial: selectedProfile.awsDefaultRegion,
+      },
+      {
+        type: 'text',
+        name: 'outputFormat',
+        message: 'Output format',
+        initial: selectedProfile.awsOutputFormat,
+      },
+    ],
+    { onCancel: () => onCancel('Aborting [disable-mfa]') }
+  );
 
   deleteProfile(profileName);
   createProfile({
