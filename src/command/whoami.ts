@@ -3,7 +3,7 @@ import { STS } from '@aws-sdk/client-sts';
 import { IAM } from '@aws-sdk/client-iam';
 
 import { getCurrentProfile } from '../lib/profile';
-import { getProfile } from '../config';
+import { getAssumeRoleProfile } from '../config';
 import { timeout } from '../lib/time';
 
 const assumedRole = (arn?: string): string | undefined => {
@@ -11,21 +11,17 @@ const assumedRole = (arn?: string): string | undefined => {
 };
 
 const whoami = async (): Promise<void> => {
-  const profile = getProfile(getCurrentProfile());
+  const currentProfile = await getCurrentProfile();
+  const assumeRoleProfile = await getAssumeRoleProfile(currentProfile);
 
-  if (!profile) {
+  if (!assumeRoleProfile) {
     console.log(chalk.red('Error loading profile'));
 
     return;
   }
 
-  const credentials = {
-    accessKeyId: profile.awsAccessKeyId,
-    secretAccessKey: profile.awsSecretAccessKey,
-  };
-
-  const sts = new STS({ credentials });
-  const iam = new IAM({ credentials });
+  const sts = new STS({});
+  const iam = new IAM({});
 
   const identity = await Promise.race([sts.getCallerIdentity({}), timeout(1500)]);
 
@@ -43,7 +39,7 @@ const whoami = async (): Promise<void> => {
     Arn: identity.Arn,
     AssumedRole: assumedRole(identity.Arn),
     Profile: getCurrentProfile(),
-    Region: profile.awsDefaultRegion,
+    Region: assumeRoleProfile.awsDefaultRegion,
     UserId: identity.UserId,
   };
 
