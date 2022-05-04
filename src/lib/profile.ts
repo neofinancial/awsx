@@ -12,8 +12,6 @@ const verifyAndGetCallerIdentity = async (
   let sts: STS;
 
   if (credentials) {
-    console.log('Using custom credentials');
-    console.log(credentials);
     sts = new STS({
       credentials: {
         accessKeyId: credentials.AccessKeyId ?? '',
