@@ -3,7 +3,7 @@ import prompts from 'prompts';
 import yargs, { Argv } from 'yargs';
 import updateNotifier from 'update-notifier';
 
-import { onCancel } from './lib/prompts-helper';
+import { onCancel } from './lib/prompts';
 
 import {
   configFileCheck,
@@ -79,7 +79,7 @@ const switchAssumeRoleProfile = async (
           (choice) => choice.value === currentProfile || choice.value === assumeRoleProfiles[0]
         ),
       },
-      { onCancel: () => onCancel('Aborting [choose-assume-role] profile') }
+      { onCancel: () => onCancel() }
     );
 
     if (answers.profile !== rootProfileOption) {
@@ -258,7 +258,7 @@ const addProfile = async (
           message: 'Use MFA',
         },
       ],
-      { onCancel: () => onCancel('Aborting [add-profile]') }
+      { onCancel: () => onCancel('Cancelling add profile') }
     );
 
     await verifyAndGetCallerIdentity({
@@ -294,7 +294,7 @@ const addProfile = async (
             validate: validateMfaExpiry,
           },
         ],
-        { onCancel: () => onCancel('Aborting [add-profile]') }
+        { onCancel: () => onCancel('Cancelling add profile') }
       );
 
       profile.mfaDeviceArn = mfaAnswers.mfaArn;
@@ -321,7 +321,7 @@ const removeProfile = async (name?: string): Promise<void> => {
         choices: choices,
         initial: choices.findIndex((choice) => choice.value === currentProfile),
       },
-      { onCancel: () => onCancel('Aborting [remove-profile]') }
+      { onCancel: () => onCancel('Cancelling remove profile') }
     );
 
     profileName = answers.profile;
@@ -373,7 +373,7 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
             choice.value === assumeRoleProfiles[0].profileName.replace('profile ', '')
         ),
       },
-      { onCancel: () => onCancel('Aborting [remove-assume-profile]') }
+      { onCancel: () => onCancel('Canceling remove assume profile') }
     );
 
     profileName = answers.profile;
@@ -506,7 +506,7 @@ const enableMfa = async (name?: string): Promise<void> => {
           (choice) => choice.value === currentProfile || choice.value === profiles[0]
         ),
       },
-      { onCancel: () => onCancel('Aborting [enable-mfa]') }
+      { onCancel: () => onCancel() }
     );
 
     profileName = answers.profile;
@@ -650,7 +650,7 @@ const disableMfa = async (name?: string): Promise<void> => {
         initial: selectedProfile.awsOutputFormat,
       },
     ],
-    { onCancel: () => onCancel('Aborting [disable-mfa]') }
+    { onCancel: () => onCancel() }
   );
 
   deleteProfile(profileName);
