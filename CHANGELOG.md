@@ -1,10 +1,11 @@
 # awsx changelog
 
-## 1.4.2 (May 4, 2022)
+## 1.4.2 (May 10, 2022)
 
-- Fixing [mfaArn] validation
+- Fixing `mfaArn` validation
 - Fixing `whoami` command
 - Fixing trailing spaces and verify user credentials
+- Add `onCancel` callback on user cancels/exit
 
 ## 1.4.1 (April 4, 2022)
 
