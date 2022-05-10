@@ -1,33 +1,29 @@
 import chalk from 'chalk';
-import { STS } from '@aws-sdk/client-sts';
 import { IAM } from '@aws-sdk/client-iam';
 
-import { getCurrentProfile } from '../lib/profile';
-import { getProfile } from '../config';
-import { timeout } from '../lib/time';
+import { getCurrentProfile, verifyAndGetCallerIdentity } from '../lib/profile';
+import { getAssumeRoleProfile } from '../config';
 
 const assumedRole = (arn?: string): string | undefined => {
   return arn ? arn.split('/')[1] : undefined;
 };
 
 const whoami = async (): Promise<void> => {
-  const profile = getProfile(getCurrentProfile());
+  const currentProfile = await getCurrentProfile();
+  const assumeRoleProfile = await getAssumeRoleProfile(currentProfile);
 
-  if (!profile) {
+  if (!assumeRoleProfile) {
     console.log(chalk.red('Error loading profile'));
 
     return;
   }
 
-  const credentials = {
-    accessKeyId: profile.awsAccessKeyId,
-    secretAccessKey: profile.awsSecretAccessKey,
-  };
+  const iam = new IAM({});
 
-  const sts = new STS({ credentials });
-  const iam = new IAM({ credentials });
+  const identity = await verifyAndGetCallerIdentity();
 
-  const identity = await Promise.race([sts.getCallerIdentity({}), timeout(1500)]);
+  console.log('Identity');
+  console.log(identity);
 
   if (!identity) {
     console.log(chalk.red(`Session is expired or invalid`));
@@ -43,7 +39,7 @@ const whoami = async (): Promise<void> => {
     Arn: identity.Arn,
     AssumedRole: assumedRole(identity.Arn),
     Profile: getCurrentProfile(),
-    Region: profile.awsDefaultRegion,
+    Region: assumeRoleProfile.awsDefaultRegion,
     UserId: identity.UserId,
   };
 

@@ -1,5 +1,12 @@
 # awsx changelog
 
+## 1.4.2 (May 10, 2022)
+
+- Fixing `mfaArn` validation
+- Fixing `whoami` command
+- Fixing trailing spaces and verify user credentials
+- Add `onCancel` callback on user cancels/exit
+
 ## 1.4.1 (April 4, 2022)
 
 - Fixing the value of the `root profile` option to correspond with the name of the profile.

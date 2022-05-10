@@ -1,7 +1,7 @@
 {
   "name": "awsx",
   "description": "AWS CLI profile switcher with MFA support",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "author": "Neo Financial Engineering <engineering@neofinancial.com>",
   "license": "MIT",
   "repository": {
