@@ -373,7 +373,7 @@ const removeAssumeRoleProfile = async (name?: string): Promise<void> => {
             choice.value === assumeRoleProfiles[0].profileName.replace('profile ', '')
         ),
       },
-      { onCancel: () => onCancel('Canceling remove assume profile') }
+      { onCancel: () => onCancel('Cancelling remove assume profile') }
     );
 
     profileName = answers.profile;

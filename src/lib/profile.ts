@@ -27,7 +27,7 @@ const verifyAndGetCallerIdentity = async (
 
     return identity;
   } catch (error) {
-    throw new Error(`Invalid credentials [AccessKey] or [SecretKey]\n ${error}`);
+    throw new Error(`Invalid credentials AccessKey or SecretKey\n ${error}`);
   }
 };
 
