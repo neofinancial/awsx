@@ -41,7 +41,7 @@
     ]
   },
   "dependencies": {
-    "update-notifier": "^4.1.3"
+    "update-notifier": "^6.0.2"
   },
   "devDependencies": {
     "@aws-sdk/client-iam": "^3.43.0",
